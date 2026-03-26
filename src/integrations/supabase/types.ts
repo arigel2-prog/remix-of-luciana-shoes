@@ -14,7 +14,260 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clients: {
+        Row: {
+          address: string | null
+          city: string | null
+          company_name: string
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          notes: string | null
+          phone: string | null
+          state: string | null
+          updated_at: string
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          company_name: string
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          company_name?: string
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          order_id: string
+          quantity: number
+          size: string | null
+          style_id: string
+          total_price: number | null
+          unit_price: number
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          order_id: string
+          quantity?: number
+          size?: string | null
+          style_id: string
+          total_price?: number | null
+          unit_price: number
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          order_id?: string
+          quantity?: number
+          size?: string | null
+          style_id?: string
+          total_price?: number | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_style_id_fkey"
+            columns: ["style_id"]
+            isOneToOne: false
+            referencedRelation: "styles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          order_date: string
+          order_number: string
+          season: string | null
+          status: string
+          total_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_date?: string
+          order_number: string
+          season?: string | null
+          status?: string
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_date?: string
+          order_number?: string
+          season?: string | null
+          status?: string
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          client_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          order_id: string
+          payment_date: string
+          payment_method: string | null
+          reference_number: string | null
+        }
+        Insert: {
+          amount: number
+          client_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id: string
+          payment_date?: string
+          payment_method?: string | null
+          reference_number?: string | null
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id?: string
+          payment_date?: string
+          payment_method?: string | null
+          reference_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      styles: {
+        Row: {
+          category: string | null
+          colors: string[] | null
+          created_at: string
+          description: string | null
+          factory_description: string | null
+          factory_name: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          materials: string | null
+          name: string
+          retail_price: number | null
+          season: string | null
+          sizes: string[] | null
+          style_code: string
+          updated_at: string
+          wholesale_price: number | null
+        }
+        Insert: {
+          category?: string | null
+          colors?: string[] | null
+          created_at?: string
+          description?: string | null
+          factory_description?: string | null
+          factory_name?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          materials?: string | null
+          name: string
+          retail_price?: number | null
+          season?: string | null
+          sizes?: string[] | null
+          style_code: string
+          updated_at?: string
+          wholesale_price?: number | null
+        }
+        Update: {
+          category?: string | null
+          colors?: string[] | null
+          created_at?: string
+          description?: string | null
+          factory_description?: string | null
+          factory_name?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          materials?: string | null
+          name?: string
+          retail_price?: number | null
+          season?: string | null
+          sizes?: string[] | null
+          style_code?: string
+          updated_at?: string
+          wholesale_price?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
