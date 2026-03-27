@@ -10,6 +10,7 @@ import Orders from "./pages/Orders";
 import NewOrder from "./pages/NewOrder";
 import OrderDetail from "./pages/OrderDetail";
 import Collections from "./pages/Collections";
+import FactoryCrossCheck from "./pages/FactoryCrossCheck";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/orders/new" element={<NewOrder />} />
           <Route path="/orders/:id" element={<OrderDetail />} />
           <Route path="/collections" element={<Collections />} />
+          <Route path="/factory-check" element={<FactoryCrossCheck />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
