@@ -31,8 +31,8 @@ export function AppSidebar() {
         <Link to="/" className="flex items-center gap-3">
           <Gem className="h-8 w-8 text-sidebar-primary" />
           <div>
-            <h1 className="font-display text-xl font-bold text-sidebar-foreground">ShowRoom</h1>
-            <p className="text-xs text-sidebar-foreground/60 tracking-wider uppercase">Pro</p>
+            <h1 className="font-display text-xl font-bold text-sidebar-foreground">Luciana</h1>
+            <p className="text-xs text-sidebar-foreground/60 tracking-wider uppercase">Shoes</p>
           </div>
         </Link>
       </SidebarHeader>
