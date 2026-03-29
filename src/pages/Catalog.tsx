@@ -35,8 +35,9 @@ export default function Catalog() {
         style_code: formData.get("style_code") as string,
         name: formData.get("name") as string,
         description: formData.get("description") as string,
-        factory_name: formData.get("factory_name") as string,
-        factory_description: formData.get("factory_description") as string,
+        last_number: formData.get("last_number") as string || null,
+        leather_description: formData.get("leather_description") as string || null,
+        sole_type: formData.get("sole_type") as string || null,
         category: formData.get("category") as string,
         wholesale_price: Number(formData.get("wholesale_price")) || null,
         retail_price: Number(formData.get("retail_price")) || null,
@@ -94,24 +95,28 @@ export default function Catalog() {
                   <Label htmlFor="description">Description</Label>
                   <Textarea id="description" name="description" placeholder="Style description for clients" />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="factory_name">Factory Name</Label>
-                    <Input id="factory_name" name="factory_name" placeholder="Factory style name" />
+                    <Label htmlFor="last_number">Last #</Label>
+                    <Input id="last_number" name="last_number" placeholder="e.g. 290, 614, Belga" />
                   </div>
                   <div>
-                    <Label htmlFor="factory_description">Factory Description</Label>
-                    <Input id="factory_description" name="factory_description" placeholder="Factory description" />
+                    <Label htmlFor="leather_description">Leather</Label>
+                    <Input id="leather_description" name="leather_description" placeholder="e.g. Boxcalf Negro" />
+                  </div>
+                  <div>
+                    <Label htmlFor="sole_type">Sole Type</Label>
+                    <Input id="sole_type" name="sole_type" placeholder="e.g. Thin, Thick" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="category">Category</Label>
-                    <Input id="category" name="category" placeholder="e.g. Necklaces" />
+                    <Input id="category" name="category" placeholder="e.g. Loafer, Oxford" />
                   </div>
                   <div>
                     <Label htmlFor="materials">Materials</Label>
-                    <Input id="materials" name="materials" placeholder="e.g. 14K Gold, Diamond" />
+                    <Input id="materials" name="materials" placeholder="e.g. Leather" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
