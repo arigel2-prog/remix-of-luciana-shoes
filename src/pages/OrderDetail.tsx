@@ -39,7 +39,7 @@ export default function OrderDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("order_items")
-        .select("*, styles(style_code, name, factory_name, factory_description)")
+        .select("*, styles(style_code, name, factory_name, factory_description, last_number, leather_description, sole_type)")
         .eq("order_id", id!);
       if (error) throw error;
       return data;
