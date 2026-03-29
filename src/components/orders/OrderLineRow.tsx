@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { StyleCombobox } from "@/components/orders/StyleCombobox";
 import { Trash2 } from "lucide-react";
 
 export const SIZES = ["39", "40", "41", "42", "43", "44", "45", "46"];
@@ -44,18 +44,11 @@ export function OrderLineRow({ line, index, styles, canRemove, onUpdate, onUpdat
       <div className="grid grid-cols-12 gap-2 items-end">
         <div className="col-span-12 sm:col-span-3">
           <label className="text-xs font-medium text-muted-foreground">Style</label>
-          <Select value={line.style_id} onValueChange={(val) => onUpdate(index, "style_id", val)}>
-            <SelectTrigger className="text-sm h-9">
-              <SelectValue placeholder="Select style" />
-            </SelectTrigger>
-            <SelectContent>
-              {styles.map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  {s.style_code} — {s.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <StyleCombobox
+            styles={styles}
+            value={line.style_id}
+            onSelect={(val) => onUpdate(index, "style_id", val)}
+          />
         </div>
         <div className="col-span-4 sm:col-span-1">
           <label className="text-xs font-medium text-muted-foreground">Last</label>
