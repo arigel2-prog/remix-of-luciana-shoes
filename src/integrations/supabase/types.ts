@@ -219,11 +219,14 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          last_number: string | null
+          leather_description: string | null
           materials: string | null
           name: string
           retail_price: number | null
           season: string | null
           sizes: string[] | null
+          sole_type: string | null
           style_code: string
           updated_at: string
           wholesale_price: number | null
@@ -238,11 +241,14 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          last_number?: string | null
+          leather_description?: string | null
           materials?: string | null
           name: string
           retail_price?: number | null
           season?: string | null
           sizes?: string[] | null
+          sole_type?: string | null
           style_code: string
           updated_at?: string
           wholesale_price?: number | null
@@ -257,11 +263,14 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          last_number?: string | null
+          leather_description?: string | null
           materials?: string | null
           name?: string
           retail_price?: number | null
           season?: string | null
           sizes?: string[] | null
+          sole_type?: string | null
           style_code?: string
           updated_at?: string
           wholesale_price?: number | null
