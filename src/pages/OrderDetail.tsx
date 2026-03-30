@@ -1,24 +1,40 @@
-import { useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+import { useRef, useState, useEffect, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Printer, FileText, Package, Factory, Receipt } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Printer, FileText, Package, Factory, Receipt, Pencil, Trash2, Plus, Save, X } from "lucide-react";
+import { toast } from "sonner";
 import OrderConfirmationPDF from "@/components/documents/OrderConfirmationPDF";
 import PackingListPDF from "@/components/documents/PackingListPDF";
 import InvoicePDF from "@/components/documents/InvoicePDF";
 import FactoryOrderPDF from "@/components/documents/FactoryOrderPDF";
+import { OrderLineRow, OrderLineData, SIZES } from "@/components/orders/OrderLineRow";
 
 type DocType = "confirmation" | "packing" | "invoice" | "factory" | null;
 
 export default function OrderDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [activeDoc, setActiveDoc] = useState<DocType>(null);
+  const [editing, setEditing] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
+
+  // Edit state
+  const [editSeason, setEditSeason] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [editStatus, setEditStatus] = useState("");
+  const [editLines, setEditLines] = useState<OrderLineData[]>([]);
 
   const { data: order } = useQuery({
     queryKey: ["order", id],
@@ -60,6 +76,142 @@ export default function OrderDetail() {
     enabled: !!id,
   });
 
+  const { data: styles } = useQuery({
+    queryKey: ["styles-list"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("styles")
+        .select("id, style_code, name, wholesale_price, last_number, leather_description, sole_type")
+        .eq("is_active", true)
+        .order("style_code");
+      return data ?? [];
+    },
+  });
+
+  // Build edit lines from existing items
+  const buildLinesFromItems = useMemo(() => {
+    if (!items) return [];
+    // Group items by style_id + color (which stores leather|lining|sole|comments)
+    const grouped = new Map<string, OrderLineData>();
+    for (const item of items) {
+      const key = `${item.style_id}__${item.color || ""}`;
+      if (!grouped.has(key)) {
+        const parts = (item.color || "").split(" | ");
+        grouped.set(key, {
+          style_id: item.style_id,
+          leather: parts[0] || "",
+          lining: parts[1] || "",
+          sole: parts[2] || "",
+          comments: parts[3] || "",
+          sizes: {},
+        });
+      }
+      const line = grouped.get(key)!;
+      if (item.size) {
+        line.sizes[item.size] = (line.sizes[item.size] || 0) + item.quantity;
+      }
+    }
+    return Array.from(grouped.values());
+  }, [items]);
+
+  const startEditing = () => {
+    if (!order) return;
+    setEditSeason(order.season || "");
+    setEditNotes(order.notes || "");
+    setEditStatus(order.status);
+    setEditLines(buildLinesFromItems.length > 0 ? buildLinesFromItems : [{ style_id: "", leather: "", lining: "", sole: "", comments: "", sizes: {} }]);
+    setEditing(true);
+  };
+
+  const updateLine = (i: number, field: string, value: any) => {
+    const updated = [...editLines];
+    (updated[i] as any)[field] = value;
+    if (field === "style_id") {
+      const style = styles?.find((s) => s.id === value);
+      if (style) {
+        if (style.leather_description && !updated[i].leather) updated[i].leather = style.leather_description;
+        if (style.sole_type && !updated[i].sole) updated[i].sole = style.sole_type;
+      }
+    }
+    setEditLines(updated);
+  };
+
+  const updateSize = (i: number, size: string, qty: number) => {
+    const updated = [...editLines];
+    updated[i].sizes = { ...updated[i].sizes, [size]: qty };
+    setEditLines(updated);
+  };
+
+  const addLine = () => setEditLines([...editLines, { style_id: "", leather: "", lining: "", sole: "", comments: "", sizes: {} }]);
+  const removeLine = (i: number) => setEditLines(editLines.filter((_, idx) => idx !== i));
+
+  const editTotalPairs = editLines.reduce((sum, l) => sum + Object.values(l.sizes).reduce((s, q) => s + q, 0), 0);
+  const unitPrice = 130;
+  const editTotalAmount = editTotalPairs * unitPrice;
+
+  const saveEdit = useMutation({
+    mutationFn: async () => {
+      const validLines = editLines.filter((l) => l.style_id && Object.values(l.sizes).some((q) => q > 0));
+      if (!validLines.length) throw new Error("Please add at least one style with sizes");
+
+      // Update order
+      const { error: orderError } = await supabase
+        .from("orders")
+        .update({
+          season: editSeason,
+          notes: editNotes,
+          status: editStatus,
+          total_amount: editTotalAmount,
+        })
+        .eq("id", id!);
+      if (orderError) throw orderError;
+
+      // Delete old items and insert new ones
+      const { error: deleteError } = await supabase.from("order_items").delete().eq("order_id", id!);
+      if (deleteError) throw deleteError;
+
+      const newItems = validLines.flatMap((l) =>
+        Object.entries(l.sizes)
+          .filter(([_, qty]) => qty > 0)
+          .map(([size, qty]) => ({
+            order_id: id!,
+            style_id: l.style_id,
+            size,
+            color: [l.leather, l.lining, l.sole, l.comments].filter(Boolean).join(" | "),
+            quantity: qty,
+            unit_price: unitPrice,
+          }))
+      );
+
+      if (newItems.length) {
+        const { error: insertError } = await supabase.from("order_items").insert(newItems);
+        if (insertError) throw insertError;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Order updated successfully");
+      setEditing(false);
+      queryClient.invalidateQueries({ queryKey: ["order", id] });
+      queryClient.invalidateQueries({ queryKey: ["order-items", id] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const deleteOrder = useMutation({
+    mutationFn: async () => {
+      // Delete items first, then order
+      await supabase.from("order_items").delete().eq("order_id", id!);
+      await supabase.from("payments").delete().eq("order_id", id!);
+      const { error } = await supabase.from("orders").delete().eq("id", id!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Order deleted");
+      navigate("/orders");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
   if (!order) return <AppLayout><div className="text-center py-12 text-muted-foreground">Loading order...</div></AppLayout>;
 
   const handlePrint = () => {
@@ -90,6 +242,90 @@ export default function OrderDetail() {
     { type: "factory" as const, label: "Factory Order", icon: Factory },
   ];
 
+  // ── EDIT MODE ──
+  if (editing) {
+    return (
+      <AppLayout>
+        <div className="max-w-6xl space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="font-display text-3xl font-bold text-foreground">Edit Order {order.order_number}</h1>
+              <p className="text-muted-foreground mt-1">Modify order details and line items</p>
+            </div>
+            <Button variant="ghost" onClick={() => setEditing(false)}><X className="h-4 w-4 mr-1" /> Cancel</Button>
+          </div>
+
+          {/* Order Header */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <Label>Status</Label>
+                  <Select value={editStatus} onValueChange={setEditStatus}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="in_production">In Production</SelectItem>
+                      <SelectItem value="shipped">Shipped</SelectItem>
+                      <SelectItem value="delivered">Delivered</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Season</Label>
+                  <Input value={editSeason} onChange={(e) => setEditSeason(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Notes</Label>
+                  <Textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} className="h-9 min-h-[36px]" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Edit Lines */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardTitle className="font-display">Order Lines</CardTitle>
+              <Button variant="outline" size="sm" onClick={addLine}><Plus className="h-4 w-4 mr-1" /> Add Style</Button>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {editLines.map((line, i) => (
+                <OrderLineRow
+                  key={i}
+                  line={line}
+                  index={i}
+                  styles={styles ?? []}
+                  canRemove={editLines.length > 1}
+                  onUpdate={updateLine}
+                  onUpdateSize={updateSize}
+                  onRemove={removeLine}
+                />
+              ))}
+              <div className="flex justify-between items-center pt-4 border-t border-border">
+                <span className="text-sm text-muted-foreground">
+                  Total Pairs: <span className="font-bold text-foreground text-lg">{editTotalPairs}</span>
+                </span>
+                <span className="font-display text-2xl font-bold text-foreground">
+                  ${editTotalAmount.toLocaleString()}.00
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex gap-3 justify-end">
+            <Button variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
+            <Button onClick={() => saveEdit.mutate()} disabled={saveEdit.isPending} className="bg-accent text-accent-foreground hover:bg-accent/90">
+              <Save className="h-4 w-4 mr-1" /> {saveEdit.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // ── VIEW MODE ──
   return (
     <AppLayout>
       <div className="max-w-4xl space-y-6">
@@ -97,6 +333,30 @@ export default function OrderDetail() {
           <div>
             <h1 className="font-display text-3xl font-bold text-foreground">Order {order.order_number}</h1>
             <p className="text-muted-foreground mt-1 capitalize">{order.status.replace(/_/g, " ")}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={startEditing}>
+              <Pencil className="h-4 w-4 mr-1" /> Edit
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive"><Trash2 className="h-4 w-4 mr-1" /> Delete</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Order {order.order_number}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete this order, all its items, and any associated payments. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => deleteOrder.mutate()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete Order
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
 
