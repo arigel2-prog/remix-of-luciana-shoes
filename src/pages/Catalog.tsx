@@ -10,11 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Plus, Search, Gem } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Catalog() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: styles, isLoading } = useQuery({
     queryKey: ["styles", search],
@@ -168,7 +170,7 @@ export default function Catalog() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {styles.map((style) => (
-              <Card key={style.id} className="overflow-hidden hover:shadow-lg transition-shadow border-border group">
+              <Card key={style.id} className="overflow-hidden hover:shadow-lg transition-shadow border-border group cursor-pointer" onClick={() => navigate(`/catalog/${style.id}`)}>
                 <div className="aspect-square bg-secondary flex items-center justify-center overflow-hidden">
                   {style.image_url ? (
                     <img src={style.image_url} alt={style.name} className="w-full h-full object-cover" />
