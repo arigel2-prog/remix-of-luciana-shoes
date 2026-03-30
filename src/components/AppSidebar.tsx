@@ -28,11 +28,12 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="p-6 border-b border-sidebar-border">
-        <Link to="/" className="flex items-center gap-3">
-          <Gem className="h-8 w-8 text-sidebar-primary" />
-          <div>
-            <h1 className="font-display text-xl font-bold text-sidebar-foreground">Luciana</h1>
-            <p className="text-xs text-sidebar-foreground/60 tracking-wider uppercase">Shoes</p>
+        <Link to="/" className="flex flex-col items-center gap-1">
+          <h1 className="font-display text-2xl font-semibold text-sidebar-foreground tracking-wide">LUCIANA</h1>
+          <div className="flex items-center gap-2">
+            <span className="h-px w-6 bg-sidebar-primary/60" />
+            <p className="text-[10px] text-sidebar-primary tracking-[0.3em] uppercase font-medium">Shoes</p>
+            <span className="h-px w-6 bg-sidebar-primary/60" />
           </div>
         </Link>
       </SidebarHeader>

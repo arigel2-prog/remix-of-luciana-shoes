@@ -9,6 +9,7 @@ import Clients from "./pages/Clients";
 import Orders from "./pages/Orders";
 import NewOrder from "./pages/NewOrder";
 import OrderDetail from "./pages/OrderDetail";
+import StyleDetail from "./pages/StyleDetail";
 import Collections from "./pages/Collections";
 import FactoryCrossCheck from "./pages/FactoryCrossCheck";
 import NotFound from "./pages/NotFound";
@@ -24,6 +25,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/catalog" element={<Catalog />} />
+          <Route path="/catalog/:id" element={<StyleDetail />} />
           <Route path="/clients" element={<Clients />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/orders/new" element={<NewOrder />} />
