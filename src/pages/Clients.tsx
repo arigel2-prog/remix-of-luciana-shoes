@@ -32,7 +32,7 @@ export default function Clients() {
 
   const addClient = useMutation({
     mutationFn: async (formData: FormData) => {
-      const client = {
+      const client: Record<string, any> = {
         company_name: formData.get("company_name") as string,
         contact_name: formData.get("contact_name") as string,
         email: formData.get("email") as string,
@@ -41,6 +41,9 @@ export default function Clients() {
         city: formData.get("city") as string,
         state: formData.get("state") as string,
         zip_code: formData.get("zip_code") as string,
+      };
+      const custNum = formData.get("customer_number") as string;
+      if (custNum) client.customer_number = custNum;
       };
       const { error } = await supabase.from("clients").insert(client);
       if (error) throw error;
