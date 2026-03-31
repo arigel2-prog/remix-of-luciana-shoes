@@ -44,7 +44,7 @@ export default function Clients() {
       };
       const custNum = formData.get("customer_number") as string;
       if (custNum) client.customer_number = custNum;
-      const { error } = await supabase.from("clients").insert(client);
+      const { error } = await supabase.from("clients").insert(client as any);
       if (error) throw error;
     },
     onSuccess: () => {
