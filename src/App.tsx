@@ -13,6 +13,7 @@ import OrderDetail from "./pages/OrderDetail";
 import StyleDetail from "./pages/StyleDetail";
 import Collections from "./pages/Collections";
 import FactoryCrossCheck from "./pages/FactoryCrossCheck";
+import Finance from "./pages/Finance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
