@@ -152,7 +152,8 @@ export default function Clients() {
               </TableHeader>
               <TableBody>
                 {clients.map((client) => (
-                  <TableRow key={client.id}>
+                  <TableRow key={client.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/clients/${client.id}`)}>
+                    <TableCell className="font-mono text-accent">{(client as any).customer_number || "—"}</TableCell>
                     <TableCell className="font-medium text-foreground">{client.company_name}</TableCell>
                     <TableCell className="text-muted-foreground">{client.contact_name}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">{client.email}</TableCell>
