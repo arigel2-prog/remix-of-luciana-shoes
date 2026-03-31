@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Plus, Search, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Clients() {
   const [search, setSearch] = useState("");
