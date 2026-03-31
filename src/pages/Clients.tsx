@@ -141,7 +141,8 @@ export default function Clients() {
           <div className="rounded-lg border border-border overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="bg-secondary">
+                 <TableRow className="bg-secondary">
+                  <TableHead>Customer #</TableHead>
                   <TableHead>Company</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead className="hidden md:table-cell">Email</TableHead>
