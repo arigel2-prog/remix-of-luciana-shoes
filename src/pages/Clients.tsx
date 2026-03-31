@@ -15,6 +15,7 @@ export default function Clients() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: clients, isLoading } = useQuery({
     queryKey: ["clients", search],
