@@ -80,10 +80,14 @@ export default function Clients() {
                 }}
                 className="space-y-4"
               >
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="company_name">Company Name *</Label>
                     <Input id="company_name" name="company_name" required />
+                  </div>
+                  <div>
+                    <Label htmlFor="customer_number">Customer #</Label>
+                    <Input id="customer_number" name="customer_number" placeholder="e.g. 1001" />
                   </div>
                   <div>
                     <Label htmlFor="contact_name">Contact Name</Label>
