@@ -9,11 +9,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Plus, Search, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Clients() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: clients, isLoading } = useQuery({
     queryKey: ["clients", search],
@@ -30,7 +32,7 @@ export default function Clients() {
 
   const addClient = useMutation({
     mutationFn: async (formData: FormData) => {
-      const client = {
+      const client: Record<string, any> = {
         company_name: formData.get("company_name") as string,
         contact_name: formData.get("contact_name") as string,
         email: formData.get("email") as string,
@@ -40,7 +42,9 @@ export default function Clients() {
         state: formData.get("state") as string,
         zip_code: formData.get("zip_code") as string,
       };
-      const { error } = await supabase.from("clients").insert(client);
+      const custNum = formData.get("customer_number") as string;
+      if (custNum) client.customer_number = custNum;
+      const { error } = await supabase.from("clients").insert(client as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -76,10 +80,14 @@ export default function Clients() {
                 }}
                 className="space-y-4"
               >
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="company_name">Company Name *</Label>
                     <Input id="company_name" name="company_name" required />
+                  </div>
+                  <div>
+                    <Label htmlFor="customer_number">Customer #</Label>
+                    <Input id="customer_number" name="customer_number" placeholder="e.g. 1001" />
                   </div>
                   <div>
                     <Label htmlFor="contact_name">Contact Name</Label>
@@ -139,7 +147,8 @@ export default function Clients() {
           <div className="rounded-lg border border-border overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="bg-secondary">
+                 <TableRow className="bg-secondary">
+                  <TableHead>Customer #</TableHead>
                   <TableHead>Company</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead className="hidden md:table-cell">Email</TableHead>
@@ -149,7 +158,8 @@ export default function Clients() {
               </TableHeader>
               <TableBody>
                 {clients.map((client) => (
-                  <TableRow key={client.id}>
+                  <TableRow key={client.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/clients/${client.id}`)}>
+                    <TableCell className="font-mono text-accent">{(client as any).customer_number || "—"}</TableCell>
                     <TableCell className="font-medium text-foreground">{client.company_name}</TableCell>
                     <TableCell className="text-muted-foreground">{client.contact_name}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">{client.email}</TableCell>

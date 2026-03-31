@@ -1,0 +1,1 @@
+ALTER TABLE public.clients ADD COLUMN customer_number text UNIQUE;
