@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Gem, Users, ShoppingCart, Plus, DollarSign, ClipboardCheck, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Gem, Users, ShoppingCart, Plus, DollarSign, ClipboardCheck, TrendingUp, Sparkles } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
