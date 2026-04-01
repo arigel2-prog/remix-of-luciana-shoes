@@ -21,6 +21,7 @@ const menuItems = [
   { title: "Collections", url: "/collections", icon: DollarSign },
   { title: "Finance", url: "/finance", icon: TrendingUp },
   { title: "Factory Check", url: "/factory-check", icon: ClipboardCheck },
+  { title: "AI Analytics", url: "/analytics", icon: Sparkles },
 ];
 
 export function AppSidebar() {
