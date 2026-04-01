@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useRef, useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,13 +12,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Printer, FileText, Package, Factory, Receipt, Pencil, Trash2, Plus, Save, X } from "lucide-react";
+import { Printer, FileText, Package, Factory, Receipt, Pencil, Trash2, Plus, Save, X, Copy, Mail } from "lucide-react";
 import { toast } from "sonner";
 import OrderConfirmationPDF from "@/components/documents/OrderConfirmationPDF";
 import PackingListPDF from "@/components/documents/PackingListPDF";
 import InvoicePDF from "@/components/documents/InvoicePDF";
 import FactoryOrderPDF from "@/components/documents/FactoryOrderPDF";
 import { OrderLineRow, OrderLineData, SIZES } from "@/components/orders/OrderLineRow";
+import { OrderStatusTracker } from "@/components/orders/OrderStatusTracker";
 
 type DocType = "confirmation" | "packing" | "invoice" | "factory" | null;
 
@@ -28,6 +29,7 @@ export default function OrderDetail() {
   const queryClient = useQueryClient();
   const [activeDoc, setActiveDoc] = useState<DocType>(null);
   const [editing, setEditing] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
   // Edit state
@@ -91,7 +93,6 @@ export default function OrderDetail() {
   // Build edit lines from existing items
   const buildLinesFromItems = useMemo(() => {
     if (!items) return [];
-    // Group items by style_id + color (which stores leather|lining|sole|comments)
     const grouped = new Map<string, OrderLineData>();
     for (const item of items) {
       const key = `${item.style_id}__${item.color || ""}`;
@@ -154,7 +155,6 @@ export default function OrderDetail() {
       const validLines = editLines.filter((l) => l.style_id && Object.values(l.sizes).some((q) => q > 0));
       if (!validLines.length) throw new Error("Please add at least one style with sizes");
 
-      // Update order
       const { error: orderError } = await supabase
         .from("orders")
         .update({
@@ -166,7 +166,6 @@ export default function OrderDetail() {
         .eq("id", id!);
       if (orderError) throw orderError;
 
-      // Delete old items and insert new ones
       const { error: deleteError } = await supabase.from("order_items").delete().eq("order_id", id!);
       if (deleteError) throw deleteError;
 
@@ -199,7 +198,6 @@ export default function OrderDetail() {
 
   const deleteOrder = useMutation({
     mutationFn: async () => {
-      // Delete items first, then order
       await supabase.from("order_items").delete().eq("order_id", id!);
       await supabase.from("payments").delete().eq("order_id", id!);
       const { error } = await supabase.from("orders").delete().eq("id", id!);
@@ -211,6 +209,83 @@ export default function OrderDetail() {
     },
     onError: (err: Error) => toast.error(err.message),
   });
+
+  // Duplicate order
+  const duplicateOrder = useMutation({
+    mutationFn: async () => {
+      if (!order || !items) throw new Error("Order data not loaded");
+
+      const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
+      const { data: newOrder, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          order_number: orderNumber,
+          client_id: order.client_id,
+          season: order.season,
+          notes: order.notes ? `(Copied from ${order.order_number}) ${order.notes}` : `Copied from ${order.order_number}`,
+          total_amount: order.total_amount,
+          status: "draft",
+        })
+        .select()
+        .single();
+      if (orderError) throw orderError;
+
+      const newItems = items.map((item) => ({
+        order_id: newOrder.id,
+        style_id: item.style_id,
+        size: item.size,
+        color: item.color,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+      }));
+
+      if (newItems.length) {
+        const { error: itemsError } = await supabase.from("order_items").insert(newItems);
+        if (itemsError) throw itemsError;
+      }
+
+      return newOrder;
+    },
+    onSuccess: (newOrder) => {
+      toast.success("Order duplicated");
+      navigate(`/orders/${newOrder.id}`);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // Quick status update
+  const quickStatusUpdate = useMutation({
+    mutationFn: async (newStatus: string) => {
+      const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", id!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["order", id] });
+      toast.success("Status updated");
+    },
+  });
+
+  // Send confirmation email via mailto (simple approach without email infra)
+  const handleSendEmail = () => {
+    if (!order?.clients?.email) {
+      toast.error("Client has no email address on file");
+      return;
+    }
+    const totalPairs = items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
+    const subject = encodeURIComponent(`Order Confirmation - ${order.order_number} | Luciana Shoes`);
+    const body = encodeURIComponent(
+      `Dear ${order.clients?.contact_name || order.clients?.company_name},\n\n` +
+      `Thank you for your order! Please find your order details below:\n\n` +
+      `Order #: ${order.order_number}\n` +
+      `Season: ${order.season || "N/A"}\n` +
+      `Total Pairs: ${totalPairs}\n` +
+      `Total Amount: $${Number(order.total_amount).toLocaleString()}\n\n` +
+      `Please review and confirm this order at your earliest convenience.\n\n` +
+      `Best regards,\nLuciana Shoes`
+    );
+    window.open(`mailto:${order.clients.email}?subject=${subject}&body=${body}`, "_self");
+    toast.success("Email client opened");
+  };
 
   if (!order) return <AppLayout><div className="text-center py-12 text-muted-foreground">Loading order...</div></AppLayout>;
 
@@ -242,6 +317,10 @@ export default function OrderDetail() {
     { type: "factory" as const, label: "Factory Order", icon: Factory },
   ];
 
+  const STATUS_STEPS = ["draft", "confirmed", "submitted_to_factory", "in_production", "shipped", "delivered"];
+  const currentIdx = STATUS_STEPS.indexOf(order.status);
+  const nextStatus = currentIdx >= 0 && currentIdx < STATUS_STEPS.length - 1 ? STATUS_STEPS[currentIdx + 1] : null;
+
   // ── EDIT MODE ──
   if (editing) {
     return (
@@ -255,7 +334,6 @@ export default function OrderDetail() {
             <Button variant="ghost" onClick={() => setEditing(false)}><X className="h-4 w-4 mr-1" /> Cancel</Button>
           </div>
 
-          {/* Order Header */}
           <Card>
             <CardContent className="pt-6">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -266,9 +344,11 @@ export default function OrderDetail() {
                     <SelectContent>
                       <SelectItem value="draft">Draft</SelectItem>
                       <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="submitted_to_factory">Sent to Factory</SelectItem>
                       <SelectItem value="in_production">In Production</SelectItem>
                       <SelectItem value="shipped">Shipped</SelectItem>
                       <SelectItem value="delivered">Delivered</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -284,7 +364,6 @@ export default function OrderDetail() {
             </CardContent>
           </Card>
 
-          {/* Edit Lines */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <CardTitle className="font-display">Order Lines</CardTitle>
@@ -332,21 +411,27 @@ export default function OrderDetail() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="font-display text-3xl font-bold text-foreground">Order {order.order_number}</h1>
-            <p className="text-muted-foreground mt-1 capitalize">{order.status.replace(/_/g, " ")}</p>
+            <p className="text-muted-foreground mt-1">{order.clients?.company_name}</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={startEditing}>
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={handleSendEmail}>
+              <Mail className="h-4 w-4 mr-1" /> Email Client
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => duplicateOrder.mutate()} disabled={duplicateOrder.isPending}>
+              <Copy className="h-4 w-4 mr-1" /> {duplicateOrder.isPending ? "Copying..." : "Duplicate"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={startEditing}>
               <Pencil className="h-4 w-4 mr-1" /> Edit
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive"><Trash2 className="h-4 w-4 mr-1" /> Delete</Button>
+                <Button variant="destructive" size="sm"><Trash2 className="h-4 w-4 mr-1" /> Delete</Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete Order {order.order_number}?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently delete this order, all its items, and any associated payments. This action cannot be undone.
+                    This will permanently delete this order, all its items, and any associated payments.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -359,6 +444,25 @@ export default function OrderDetail() {
             </AlertDialog>
           </div>
         </div>
+
+        {/* Status Tracker */}
+        <Card>
+          <CardContent className="pt-6 pb-4">
+            <OrderStatusTracker status={order.status} />
+            {nextStatus && (
+              <div className="flex justify-center mt-3">
+                <Button
+                  size="sm"
+                  onClick={() => quickStatusUpdate.mutate(nextStatus)}
+                  disabled={quickStatusUpdate.isPending}
+                  className="bg-accent text-accent-foreground hover:bg-accent/90"
+                >
+                  Mark as {nextStatus.replace(/_/g, " ")}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Document Generation Buttons */}
         <Card>
