@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, ShoppingBag } from "lucide-react";
 import { OrderLineRow, OrderLineData, SIZES } from "@/components/orders/OrderLineRow";
 
 const emptyLine = (): OrderLineData => ({
@@ -52,7 +52,6 @@ export default function NewOrder() {
   const updateLine = (i: number, field: string, value: any) => {
     const updated = [...lines];
     (updated[i] as any)[field] = value;
-    // Auto-fill leather/sole from style defaults
     if (field === "style_id") {
       const style = styles?.find((s) => s.id === value);
       if (style) {
@@ -73,6 +72,7 @@ export default function NewOrder() {
   const removeLine = (i: number) => setLines(lines.filter((_, idx) => idx !== i));
 
   const totalPairs = lines.reduce((sum, l) => sum + Object.values(l.sizes).reduce((s, q) => s + q, 0), 0);
+  const totalStyles = lines.filter((l) => l.style_id).length;
   const unitPrice = 130;
   const totalAmount = totalPairs * unitPrice;
 
@@ -99,7 +99,6 @@ export default function NewOrder() {
 
       if (orderError) throw orderError;
 
-      // Create one order_item per style+size combination
       const items = validLines.flatMap((l) =>
         Object.entries(l.sizes)
           .filter(([_, qty]) => qty > 0)
@@ -129,20 +128,20 @@ export default function NewOrder() {
 
   return (
     <AppLayout>
-      <div className="max-w-6xl space-y-6">
+      <div className="max-w-6xl space-y-4">
         <div>
-          <h1 className="font-display text-3xl font-bold text-foreground">New Order</h1>
-          <p className="text-muted-foreground mt-1">Enter customer order with size breakdown</p>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">New Order</h1>
+          <p className="text-muted-foreground text-sm mt-1">Enter customer order with size breakdown</p>
         </div>
 
         {/* Order Header */}
         <Card>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <CardContent className="pt-4 pb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <Label>Client *</Label>
+                <Label className="text-xs">Client *</Label>
                 <Select value={clientId} onValueChange={setClientId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-9">
                     <SelectValue placeholder="Select client" />
                   </SelectTrigger>
                   <SelectContent>
@@ -153,61 +152,61 @@ export default function NewOrder() {
                 </Select>
               </div>
               <div>
-                <Label>Season</Label>
-                <Input value={season} onChange={(e) => setSeason(e.target.value)} placeholder="e.g. SS 2026" />
+                <Label className="text-xs">Season</Label>
+                <Input value={season} onChange={(e) => setSeason(e.target.value)} placeholder="e.g. SS 2026" className="h-9" />
               </div>
               <div>
-                <Label>Notes</Label>
+                <Label className="text-xs">Notes</Label>
                 <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Order notes..." className="h-9 min-h-[36px]" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Order Lines */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="font-display">Order Lines</CardTitle>
-            <Button variant="outline" size="sm" onClick={addLine}>
-              <Plus className="h-4 w-4 mr-1" /> Add Style
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {lines.map((line, i) => (
-              <OrderLineRow
-                key={i}
-                line={line}
-                index={i}
-                styles={styles ?? []}
-                canRemove={lines.length > 1}
-                onUpdate={updateLine}
-                onUpdateSize={updateSize}
-                onRemove={removeLine}
-              />
-            ))}
+        {/* Sticky summary bar */}
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border border-border rounded-lg px-4 py-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-4 text-sm">
+            <span className="text-muted-foreground">
+              <span className="font-bold text-foreground">{totalStyles}</span> styles
+            </span>
+            <span className="text-muted-foreground">
+              <span className="font-bold text-foreground">{totalPairs}</span> pairs
+            </span>
+          </div>
+          <span className="font-display text-lg sm:text-xl font-bold text-foreground">
+            ${totalAmount.toLocaleString()}.00
+          </span>
+        </div>
 
-            {/* Summary */}
-            <div className="flex justify-between items-center pt-4 border-t border-border">
-              <div className="space-x-6">
-                <span className="text-sm text-muted-foreground">
-                  Total Pairs: <span className="font-bold text-foreground text-lg">{totalPairs}</span>
-                </span>
-              </div>
-              <span className="font-display text-2xl font-bold text-foreground">
-                ${totalAmount.toLocaleString()}.00
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Order Lines */}
+        <div className="space-y-3">
+          {lines.map((line, i) => (
+            <OrderLineRow
+              key={i}
+              line={line}
+              index={i}
+              styles={styles ?? []}
+              canRemove={lines.length > 1}
+              onUpdate={updateLine}
+              onUpdateSize={updateSize}
+              onRemove={removeLine}
+            />
+          ))}
+
+          <Button variant="outline" className="w-full border-dashed" onClick={addLine}>
+            <Plus className="h-4 w-4 mr-2" /> Add Another Style
+          </Button>
+        </div>
 
         {/* Actions */}
-        <div className="flex gap-3 justify-end">
+        <div className="flex gap-3 justify-end pb-6">
           <Button variant="outline" onClick={() => navigate("/orders")}>Cancel</Button>
           <Button
             onClick={() => createOrder.mutate()}
             disabled={createOrder.isPending}
             className="bg-accent text-accent-foreground hover:bg-accent/90"
           >
+            <ShoppingBag className="h-4 w-4 mr-2" />
             {createOrder.isPending ? "Creating..." : "Create Order"}
           </Button>
         </div>
