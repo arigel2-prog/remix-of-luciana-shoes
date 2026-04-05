@@ -1,7 +1,8 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { StyleCombobox } from "@/components/orders/StyleCombobox";
-import { Trash2 } from "lucide-react";
+import { Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
 
 export const SIZES = ["39", "40", "41", "42", "43", "44", "45", "46"];
 
@@ -37,92 +38,128 @@ interface OrderLineRowProps {
 export function OrderLineRow({ line, index, styles, canRemove, onUpdate, onUpdateSize, onRemove }: OrderLineRowProps) {
   const selectedStyle = styles.find((s) => s.id === line.style_id);
   const lineTotal = Object.values(line.sizes).reduce((sum, q) => sum + q, 0);
+  const [expanded, setExpanded] = useState(true);
 
   return (
-    <div className="rounded-lg border border-border bg-card p-3 space-y-3">
-      {/* Row 1: Style selector + auto-filled fields */}
-      <div className="grid grid-cols-12 gap-2 items-end">
-        <div className="col-span-12 sm:col-span-3">
-          <label className="text-xs font-medium text-muted-foreground">Style</label>
-          <StyleCombobox
-            styles={styles}
-            value={line.style_id}
-            onSelect={(val) => onUpdate(index, "style_id", val)}
-          />
-        </div>
-        <div className="col-span-4 sm:col-span-1">
-          <label className="text-xs font-medium text-muted-foreground">Last</label>
-          <div className="h-9 px-2 flex items-center text-sm bg-secondary rounded-md text-foreground truncate">
-            {selectedStyle?.last_number || "—"}
-          </div>
-        </div>
-        <div className="col-span-8 sm:col-span-3">
-          <label className="text-xs font-medium text-muted-foreground">Leather</label>
-          <Input
-            value={line.leather}
-            onChange={(e) => onUpdate(index, "leather", e.target.value)}
-            className="text-sm h-9"
-            placeholder="Boxcalf Negro"
-          />
-        </div>
-        <div className="col-span-6 sm:col-span-2">
-          <label className="text-xs font-medium text-muted-foreground">Lining</label>
-          <Input
-            value={line.lining}
-            onChange={(e) => onUpdate(index, "lining", e.target.value)}
-            className="text-sm h-9"
-            placeholder="Ternera Negro"
-          />
-        </div>
-        <div className="col-span-6 sm:col-span-2">
-          <label className="text-xs font-medium text-muted-foreground">Sole</label>
-          <Input
-            value={line.sole}
-            onChange={(e) => onUpdate(index, "sole", e.target.value)}
-            className="text-sm h-9"
-            placeholder="Thin"
-          />
-        </div>
-        <div className="col-span-12 sm:col-span-1 flex items-end justify-end">
-          {canRemove && (
-            <Button variant="ghost" size="icon" onClick={() => onRemove(index)} className="text-destructive h-9 w-9">
-              <Trash2 className="h-4 w-4" />
-            </Button>
+    <div className="rounded-lg border border-border bg-card overflow-hidden">
+      {/* Header - always visible */}
+      <div className="flex items-center gap-2 p-3 bg-secondary/30 cursor-pointer" onClick={() => setExpanded(!expanded)}>
+        <span className="text-xs font-bold text-muted-foreground w-6">#{index + 1}</span>
+        <div className="flex-1 min-w-0">
+          {selectedStyle ? (
+            <span className="text-sm font-medium text-foreground truncate">
+              <span className="font-mono text-accent">{selectedStyle.style_code}</span>
+              <span className="text-muted-foreground ml-1.5 hidden sm:inline">— {selectedStyle.name}</span>
+            </span>
+          ) : (
+            <span className="text-sm text-muted-foreground italic">Select a style...</span>
           )}
         </div>
+        {lineTotal > 0 && (
+          <span className="text-sm font-bold text-accent bg-accent/10 px-2 py-0.5 rounded">
+            {lineTotal} prs
+          </span>
+        )}
+        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}>
+          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
+        {canRemove && (
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={(e) => { e.stopPropagation(); onRemove(index); }}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        )}
       </div>
 
-      {/* Row 2: Size grid + comments */}
-      <div className="flex flex-wrap items-end gap-2">
-        {SIZES.map((size) => (
-          <div key={size} className="w-14">
-            <label className="text-[10px] text-center block text-muted-foreground font-medium">{size}</label>
-            <Input
-              type="number"
-              min={0}
-              value={line.sizes[size] || ""}
-              onChange={(e) => onUpdateSize(index, size, Number(e.target.value) || 0)}
-              className="text-sm h-8 text-center px-1"
-              placeholder="0"
-            />
+      {expanded && (
+        <div className="p-3 space-y-3">
+          {/* Style selector */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Style</label>
+              <StyleCombobox
+                styles={styles}
+                value={line.style_id}
+                onSelect={(val) => onUpdate(index, "style_id", val)}
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Last</label>
+                <div className="h-9 px-2 flex items-center text-sm bg-secondary rounded-md text-foreground truncate">
+                  {selectedStyle?.last_number || "—"}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Leather</label>
+                <Input
+                  value={line.leather}
+                  onChange={(e) => onUpdate(index, "leather", e.target.value)}
+                  className="text-sm h-9"
+                  placeholder="Boxcalf"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Sole</label>
+                <Input
+                  value={line.sole}
+                  onChange={(e) => onUpdate(index, "sole", e.target.value)}
+                  className="text-sm h-9"
+                  placeholder="Thin"
+                />
+              </div>
+            </div>
           </div>
-        ))}
-        <div className="w-14">
-          <label className="text-[10px] text-center block text-accent font-bold">Total</label>
-          <div className="h-8 flex items-center justify-center text-sm font-bold text-accent bg-accent/10 rounded-md">
-            {lineTotal}
+
+          {/* Size grid - responsive: 4 per row on mobile, all on desktop */}
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Sizes</label>
+            <div className="grid grid-cols-5 sm:grid-cols-9 gap-1.5">
+              {SIZES.map((size) => (
+                <div key={size}>
+                  <label className="text-[10px] text-center block text-muted-foreground font-medium">{size}</label>
+                  <Input
+                    type="number"
+                    min={0}
+                    inputMode="numeric"
+                    value={line.sizes[size] || ""}
+                    onChange={(e) => onUpdateSize(index, size, Number(e.target.value) || 0)}
+                    className="text-sm h-8 text-center px-0.5"
+                    placeholder="—"
+                  />
+                </div>
+              ))}
+              <div>
+                <label className="text-[10px] text-center block text-accent font-bold">Total</label>
+                <div className="h-8 flex items-center justify-center text-sm font-bold text-accent bg-accent/10 rounded-md">
+                  {lineTotal}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Comments row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Lining</label>
+              <Input
+                value={line.lining}
+                onChange={(e) => onUpdate(index, "lining", e.target.value)}
+                className="text-sm h-8"
+                placeholder="Ternera Negro"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Comments</label>
+              <Input
+                value={line.comments}
+                onChange={(e) => onUpdate(index, "comments", e.target.value)}
+                className="text-sm h-8"
+                placeholder="Special instructions..."
+              />
+            </div>
           </div>
         </div>
-        <div className="flex-1 min-w-[120px]">
-          <label className="text-[10px] text-muted-foreground font-medium">Comments</label>
-          <Input
-            value={line.comments}
-            onChange={(e) => onUpdate(index, "comments", e.target.value)}
-            className="text-sm h-8"
-            placeholder="Notes..."
-          />
-        </div>
-      </div>
+      )}
     </div>
   );
 }
