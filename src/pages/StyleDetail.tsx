@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Upload, Trash2, Gem, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Upload, Trash2, Gem, Loader2, ZoomIn } from "lucide-react";
+import { ImageLightbox } from "@/components/ImageLightbox";
 
 export default function StyleDetail() {
   const { id } = useParams<{ id: string }>();

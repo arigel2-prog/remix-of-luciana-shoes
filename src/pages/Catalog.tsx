@@ -212,6 +212,15 @@ export default function Catalog() {
             ))}
           </div>
         )}
+
+        {lightbox && (
+          <ImageLightbox
+            open={!!lightbox}
+            onOpenChange={(open) => { if (!open) setLightbox(null); }}
+            src={lightbox.src}
+            alt={lightbox.alt}
+          />
+        )}
       </div>
     </AppLayout>
   );
