@@ -270,6 +270,14 @@ export default function StyleDetail() {
             </div>
           </CardContent>
         </Card>
+        {merged.image_url && (
+          <ImageLightbox
+            open={lightboxOpen}
+            onOpenChange={setLightboxOpen}
+            src={merged.image_url}
+            alt={merged.name}
+          />
+        )}
       </div>
     </AppLayout>
   );
