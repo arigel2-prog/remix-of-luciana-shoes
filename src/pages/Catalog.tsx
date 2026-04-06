@@ -173,9 +173,17 @@ export default function Catalog() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {styles.map((style) => (
               <Card key={style.id} className="overflow-hidden hover:shadow-lg transition-shadow border-border group cursor-pointer" onClick={() => navigate(`/catalog/${style.id}`)}>
-                <div className="aspect-square bg-secondary flex items-center justify-center overflow-hidden">
+                <div className="aspect-square bg-secondary flex items-center justify-center overflow-hidden relative group/img">
                   {style.image_url ? (
-                    <img src={style.image_url} alt={style.name} className="w-full h-full object-cover" />
+                    <>
+                      <img src={style.image_url} alt={style.name} className="w-full h-full object-contain p-2" />
+                      <button
+                        className="absolute inset-0 bg-black/0 group-hover/img:bg-black/20 transition-all flex items-center justify-center opacity-0 group-hover/img:opacity-100"
+                        onClick={(e) => { e.stopPropagation(); setLightbox({ src: style.image_url!, alt: style.name }); }}
+                      >
+                        <ZoomIn className="h-8 w-8 text-white drop-shadow-lg" />
+                      </button>
+                    </>
                   ) : (
                     <Gem className="h-12 w-12 text-muted-foreground/30" />
                   )}
