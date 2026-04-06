@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Search, Gem } from "lucide-react";
+import { Plus, Search, Gem, ZoomIn } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { ImageLightbox } from "@/components/ImageLightbox";
 
 export default function Catalog() {
   const [search, setSearch] = useState("");
