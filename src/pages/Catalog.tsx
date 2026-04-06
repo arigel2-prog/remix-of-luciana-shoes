@@ -16,6 +16,7 @@ import { ImageLightbox } from "@/components/ImageLightbox";
 export default function Catalog() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
