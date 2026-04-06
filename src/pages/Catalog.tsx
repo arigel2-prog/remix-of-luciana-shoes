@@ -188,25 +188,8 @@ export default function Catalog() {
                     <Gem className="h-12 w-12 text-muted-foreground/30" />
                   )}
                 </div>
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-1">
-                    <span className="text-xs font-mono text-accent font-semibold">{style.style_code}</span>
-                    {style.category && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-                        {style.category}
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="font-medium text-foreground truncate">{style.name}</h3>
-                  {style.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{style.description}</p>
-                  )}
-                  <div className="flex justify-between items-center mt-3 pt-3 border-t border-border">
-                    <span className="text-sm text-muted-foreground">Wholesale</span>
-                    <span className="font-semibold text-foreground">
-                      ${Number(style.wholesale_price || 0).toFixed(2)}
-                    </span>
-                  </div>
+                <CardContent className="p-3">
+                  <p className="text-sm font-mono text-accent font-semibold text-center">{style.style_code}</p>
                 </CardContent>
               </Card>
             ))}
