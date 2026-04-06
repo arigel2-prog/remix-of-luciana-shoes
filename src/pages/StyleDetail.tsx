@@ -18,6 +18,7 @@ export default function StyleDetail() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const { data: style, isLoading } = useQuery({
     queryKey: ["style", id],
@@ -157,9 +158,17 @@ export default function StyleDetail() {
               <CardTitle className="font-display text-lg">Photo</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="aspect-square rounded-lg bg-secondary flex items-center justify-center overflow-hidden border border-border">
+              <div
+                className="aspect-square rounded-lg bg-secondary flex items-center justify-center overflow-hidden border border-border relative group cursor-pointer"
+                onClick={() => merged.image_url && setLightboxOpen(true)}
+              >
                 {merged.image_url ? (
-                  <img src={merged.image_url} alt={merged.name} className="w-full h-full object-cover" />
+                  <>
+                    <img src={merged.image_url} alt={merged.name} className="w-full h-full object-contain p-2" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <ZoomIn className="h-8 w-8 text-white drop-shadow-lg" />
+                    </div>
+                  </>
                 ) : (
                   <Gem className="h-16 w-16 text-muted-foreground/20" />
                 )}
