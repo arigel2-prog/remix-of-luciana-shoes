@@ -198,8 +198,8 @@ export default function StyleDetail() {
                   <Input value={merged.style_code || ""} onChange={(e) => set("style_code", e.target.value)} />
                 </div>
                 <div>
-                  <Label>Name</Label>
-                  <Input value={merged.name || ""} onChange={(e) => set("name", e.target.value)} />
+                  <Label>Season</Label>
+                  <Input value={merged.season || ""} onChange={(e) => set("season", e.target.value)} placeholder="e.g. SS 2026" />
                 </div>
               </div>
               <div>
@@ -209,16 +209,6 @@ export default function StyleDetail() {
                   onChange={(e) => set("description", e.target.value)}
                   rows={2}
                 />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Category</Label>
-                  <Input value={merged.category || ""} onChange={(e) => set("category", e.target.value)} placeholder="e.g. Loafer, Oxford" />
-                </div>
-                <div>
-                  <Label>Season</Label>
-                  <Input value={merged.season || ""} onChange={(e) => set("season", e.target.value)} placeholder="e.g. SS 2026" />
-                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
