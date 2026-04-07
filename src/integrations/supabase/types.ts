@@ -319,6 +319,53 @@ export type Database = {
         }
         Relationships: []
       }
+      wholesale_customers: {
+        Row: {
+          client_id: string | null
+          company_name: string
+          contact_name: string | null
+          created_at: string
+          email: string
+          id: string
+          is_approved: boolean
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          company_name: string
+          contact_name?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          is_approved?: boolean
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          company_name?: string
+          contact_name?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          is_approved?: boolean
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wholesale_customers_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
