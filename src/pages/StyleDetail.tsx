@@ -230,33 +230,38 @@ export default function StyleDetail() {
             <CardTitle className="font-display text-lg">Factory Specifications</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <div>
+                <Label>Style #</Label>
+                <Input value={merged.style_code || ""} disabled className="bg-muted" />
+              </div>
               <div>
                 <Label>Last #</Label>
-                <Input value={merged.last_number || ""} onChange={(e) => set("last_number", e.target.value)} placeholder="e.g. 290, 614" />
+                <Input value={merged.last_number || ""} onChange={(e) => set("last_number", e.target.value)} placeholder="e.g. 5010" />
               </div>
               <div>
                 <Label>Leather Description</Label>
                 <Input value={merged.leather_description || ""} onChange={(e) => set("leather_description", e.target.value)} placeholder="e.g. Boxcalf Negro" />
               </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div>
-                <Label>Sole Type</Label>
+                <Label>Lining</Label>
+                <Input value={merged.materials || ""} onChange={(e) => set("materials", e.target.value)} placeholder="e.g. Ternera Negra" />
+              </div>
+              <div>
+                <Label>Sole</Label>
                 <Input value={merged.sole_type || ""} onChange={(e) => set("sole_type", e.target.value)} placeholder="e.g. Thin, Thick" />
               </div>
-              <div>
-                <Label>Materials</Label>
-                <Input value={merged.materials || ""} onChange={(e) => set("materials", e.target.value)} placeholder="e.g. Full Leather" />
-              </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Factory Name</Label>
-                <Input value={merged.factory_name || ""} onChange={(e) => set("factory_name", e.target.value)} />
-              </div>
-              <div>
-                <Label>Factory Description</Label>
-                <Input value={merged.factory_description || ""} onChange={(e) => set("factory_description", e.target.value)} />
-              </div>
+            <div>
+              <Label>Comments</Label>
+              <Textarea
+                value={merged.factory_description || ""}
+                onChange={(e) => set("factory_description", e.target.value)}
+                rows={3}
+                placeholder="Special instructions or notes for the factory..."
+              />
             </div>
           </CardContent>
         </Card>
