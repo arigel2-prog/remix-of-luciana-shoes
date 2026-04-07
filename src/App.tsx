@@ -15,6 +15,8 @@ import Collections from "./pages/Collections";
 import FactoryCrossCheck from "./pages/FactoryCrossCheck";
 import Finance from "./pages/Finance";
 import Analytics from "./pages/Analytics";
+import WholesaleLogin from "./pages/WholesaleLogin";
+import WholesaleDashboard from "./pages/WholesaleDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +40,8 @@ const App = () => (
           <Route path="/factory-check" element={<FactoryCrossCheck />} />
           <Route path="/finance" element={<Finance />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/wholesale/login" element={<WholesaleLogin />} />
+          <Route path="/wholesale" element={<WholesaleDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
