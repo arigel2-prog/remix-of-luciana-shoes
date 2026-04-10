@@ -115,7 +115,7 @@ export default function Orders() {
               </TableHeader>
               <TableBody>
                 {orders.map((order) => (
-                  <TableRow key={order.id}>
+                  <TableRow key={order.id} className="cursor-pointer hover:bg-muted/50" onClick={() => window.location.href = `/orders/${order.id}`}>
                     <TableCell className="font-mono font-medium text-foreground">{order.order_number}</TableCell>
                     <TableCell className="text-foreground">{order.clients?.company_name}</TableCell>
                     <TableCell className="text-muted-foreground">{order.order_date}</TableCell>
