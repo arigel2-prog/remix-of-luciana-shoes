@@ -69,17 +69,17 @@ export default function Dashboard() {
               {/* Gold bottom line on hover */}
               <div className="absolute bottom-0 left-0 right-0 h-0.5 gold-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-sans font-light uppercase tracking-wider text-muted-foreground">
+                <CardTitle className="text-sm font-sans font-medium uppercase tracking-wider text-muted-foreground">
                   {stat.label}
                 </CardTitle>
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <stat.icon className="h-4 w-4 text-primary" />
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <stat.icon className="h-5 w-5 text-primary" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="font-display text-4xl font-semibold text-foreground">{stat.value}</div>
-                <div className={`flex items-center gap-1 mt-2 text-xs font-sans font-light ${stat.positive ? "text-emerald-400" : "text-red-400"}`}>
-                  {stat.positive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                <div className="font-display text-5xl font-semibold text-foreground">{stat.value}</div>
+                <div className={`flex items-center gap-1 mt-2 text-sm font-sans ${stat.positive ? "text-emerald-400" : "text-red-400"}`}>
+                  {stat.positive ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
                   {stat.delta}
                 </div>
               </CardContent>
@@ -91,8 +91,8 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="bg-card border-border">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="font-display text-lg">Recent Orders</CardTitle>
-              <button onClick={() => navigate("/orders")} className="text-xs font-sans text-primary hover:text-gold-light transition-colors">
+              <CardTitle className="font-display text-xl">Recent Orders</CardTitle>
+              <button onClick={() => navigate("/orders")} className="text-sm font-sans text-primary hover:text-gold-light transition-colors">
                 View all →
               </button>
             </CardHeader>
@@ -100,8 +100,8 @@ export default function Dashboard() {
           </Card>
           <Card className="bg-card border-border">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="font-display text-lg">Pending Confirmations</CardTitle>
-              <button onClick={() => navigate("/orders")} className="text-xs font-sans text-primary hover:text-gold-light transition-colors">
+              <CardTitle className="font-display text-xl">Pending Confirmations</CardTitle>
+              <button onClick={() => navigate("/orders")} className="text-sm font-sans text-primary hover:text-gold-light transition-colors">
                 View all →
               </button>
             </CardHeader>
