@@ -4,90 +4,49 @@
 
 @layer base {
   :root {
-    --background: 40 15% 96%;
-    --foreground: 220 35% 14%;
+    --background: 240 4% 10%;
+    --foreground: 240 2% 93%;
 
-    --card: 40 20% 99%;
-    --card-foreground: 220 35% 14%;
+    --card: 240 5% 13%;
+    --card-foreground: 240 2% 93%;
 
-    --popover: 40 20% 99%;
-    --popover-foreground: 220 35% 14%;
+    --popover: 240 5% 13%;
+    --popover-foreground: 240 2% 93%;
 
-    --primary: 220 50% 18%;
-    --primary-foreground: 40 40% 92%;
+    --primary: 43 50% 54%;
+    --primary-foreground: 240 6% 10%;
 
-    --secondary: 40 12% 93%;
-    --secondary-foreground: 220 35% 14%;
+    --secondary: 240 5% 17%;
+    --secondary-foreground: 240 2% 93%;
 
-    --muted: 40 10% 94%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 240 4% 15%;
+    --muted-foreground: 240 2% 49%;
 
-    --accent: 38 65% 50%;
-    --accent-foreground: 220 50% 10%;
+    --accent: 43 50% 54%;
+    --accent-foreground: 240 6% 10%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 40 12% 88%;
-    --input: 40 12% 88%;
-    --ring: 38 65% 50%;
+    --border: 240 4% 23%;
+    --input: 240 4% 23%;
+    --ring: 43 50% 54%;
 
     --radius: 0.5rem;
 
-    --gold: 38 65% 50%;
-    --gold-light: 40 50% 68%;
-    --gold-dark: 36 60% 36%;
-    --navy: 220 50% 18%;
-    --navy-light: 220 35% 32%;
-    --navy-dark: 220 55% 10%;
+    --gold: 43 50% 54%;
+    --gold-light: 43 60% 65%;
+    --gold-dark: 43 45% 40%;
+    --panel: 240 5% 17%;
 
-    --sidebar-background: 220 50% 13%;
-    --sidebar-foreground: 40 25% 92%;
-    --sidebar-primary: 38 65% 50%;
-    --sidebar-primary-foreground: 220 50% 10%;
-    --sidebar-accent: 220 42% 20%;
-    --sidebar-accent-foreground: 40 25% 92%;
-    --sidebar-border: 220 38% 22%;
-    --sidebar-ring: 38 65% 50%;
-  }
-
-  .dark {
-    --background: 220 45% 7%;
-    --foreground: 40 18% 93%;
-
-    --card: 220 40% 11%;
-    --card-foreground: 40 18% 93%;
-
-    --popover: 220 40% 11%;
-    --popover-foreground: 40 18% 93%;
-
-    --primary: 38 65% 50%;
-    --primary-foreground: 220 50% 10%;
-
-    --secondary: 220 30% 16%;
-    --secondary-foreground: 40 18% 93%;
-
-    --muted: 220 25% 14%;
-    --muted-foreground: 220 12% 55%;
-
-    --accent: 38 65% 50%;
-    --accent-foreground: 220 50% 10%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 220 25% 18%;
-    --input: 220 25% 18%;
-    --ring: 38 65% 50%;
-
-    --sidebar-background: 220 50% 8%;
-    --sidebar-foreground: 40 25% 92%;
-    --sidebar-primary: 38 65% 50%;
-    --sidebar-primary-foreground: 220 50% 10%;
-    --sidebar-accent: 220 40% 14%;
-    --sidebar-accent-foreground: 40 25% 92%;
-    --sidebar-border: 220 35% 16%;
-    --sidebar-ring: 38 65% 50%;
+    --sidebar-background: 240 5% 13%;
+    --sidebar-foreground: 240 2% 93%;
+    --sidebar-primary: 43 50% 54%;
+    --sidebar-primary-foreground: 240 6% 10%;
+    --sidebar-accent: 240 5% 17%;
+    --sidebar-accent-foreground: 240 2% 93%;
+    --sidebar-border: 240 4% 23%;
+    --sidebar-ring: 43 50% 54%;
   }
 }
 
@@ -98,15 +57,52 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: 'Raleway', system-ui, sans-serif;
+    font-weight: 300;
   }
 
   h1, h2, h3 {
     @apply tracking-tight;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(240 4% 23%);
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(43 50% 54%);
   }
 }
 
 @layer utilities {
   .luxury-shadow {
-    box-shadow: 0 4px 24px -4px hsl(220 50% 18% / 0.08), 0 1px 4px -1px hsl(220 50% 18% / 0.04);
+    box-shadow: 0 4px 24px -4px hsl(0 0% 0% / 0.3), 0 1px 4px -1px hsl(0 0% 0% / 0.2);
+  }
+  .font-cinzel {
+    font-family: 'Cinzel', serif;
+  }
+  .font-display {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+  }
+  .font-body {
+    font-family: 'Raleway', system-ui, sans-serif;
+  }
+  .gold-gradient {
+    background: linear-gradient(135deg, hsl(43 50% 54%), hsl(43 60% 65%));
+  }
+  .gold-gradient-text {
+    background: linear-gradient(135deg, hsl(43 50% 54%), hsl(43 60% 65%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }
