@@ -50,15 +50,15 @@ export function AppSidebar() {
       <SidebarHeader className="p-6 border-b border-sidebar-border">
         <Link to="/" className="flex flex-col items-center gap-2">
           <CrownIcon />
-          <h1 className="font-cinzel text-xl text-sidebar-foreground tracking-[0.3em] mt-1">LUCIANA</h1>
-          <p className="text-[9px] text-muted-foreground tracking-[0.25em] uppercase font-sans font-light">
+          <h1 className="font-cinzel text-2xl text-sidebar-foreground tracking-[0.3em] mt-1">LUCIANA</h1>
+          <p className="text-[10px] text-muted-foreground tracking-[0.25em] uppercase font-sans">
             Wholesale · Made in Spain
           </p>
         </Link>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-muted-foreground uppercase tracking-[0.2em] text-[10px] font-sans font-light px-5">
+          <SidebarGroupLabel className="text-muted-foreground uppercase tracking-[0.2em] text-[11px] font-sans px-5">
             Management
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -81,7 +81,7 @@ export function AppSidebar() {
                     >
                       <Link to={item.url}>
                         <item.icon className="h-4 w-4" />
-                        <span className="font-sans font-light text-sm">{item.title}</span>
+                        <span className="font-sans text-sm">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -93,7 +93,7 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="p-4 border-t border-sidebar-border">
         <div className="flex items-center justify-center">
-          <span className="text-[10px] font-sans font-light px-3 py-1.5 rounded-full bg-accent/10 text-primary border border-accent/20 tracking-wider uppercase">
+          <span className="text-[11px] font-sans px-3 py-1.5 rounded-full bg-accent/10 text-primary border border-accent/20 tracking-wider uppercase">
             Fall / Winter 2026
           </span>
         </div>
