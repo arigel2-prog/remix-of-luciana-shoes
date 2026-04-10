@@ -4,7 +4,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Plus, ShoppingCart, FileText } from "lucide-react";
 import { useState } from "react";
@@ -34,6 +34,7 @@ const statusColors: Record<string, string> = {
 export default function Orders() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ["orders", filterStatus],
@@ -115,7 +116,7 @@ export default function Orders() {
               </TableHeader>
               <TableBody>
                 {orders.map((order) => (
-                  <TableRow key={order.id}>
+                  <TableRow key={order.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/orders/${order.id}`)}>
                     <TableCell className="font-mono font-medium text-foreground">{order.order_number}</TableCell>
                     <TableCell className="text-foreground">{order.clients?.company_name}</TableCell>
                     <TableCell className="text-muted-foreground">{order.order_date}</TableCell>
