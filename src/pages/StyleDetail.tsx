@@ -42,7 +42,7 @@ export default function StyleDetail() {
   const updateStyle = useMutation({
     mutationFn: async () => {
       if (!id || !Object.keys(form).length) return;
-      const { error } = await supabase.from("styles").update(form).eq("id", id);
+      const { error } = await supabase.from("styles").update(form as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
