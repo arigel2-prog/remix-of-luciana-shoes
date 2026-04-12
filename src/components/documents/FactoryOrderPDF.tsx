@@ -21,6 +21,10 @@ interface OrderData {
   order_number: string;
   order_date: string;
   season: string | null;
+  clients?: {
+    company_name: string;
+    customer_number: string | null;
+  } | null;
 }
 
 interface Props {
@@ -65,73 +69,85 @@ const FactoryOrderPDF = forwardRef<HTMLDivElement, Props>(({ order, items }, ref
   const grandTotal = grouped.reduce((s, l) => s + l.total, 0);
 
   return (
-    <div ref={ref} className="bg-white text-black p-6 max-w-[1100px] mx-auto" style={{ fontFamily: "Arial, sans-serif", fontSize: "11px" }}>
+    <div ref={ref} className="bg-white text-black p-6 max-w-[1100px] mx-auto" style={{ fontFamily: "'Raleway', Arial, sans-serif", fontSize: "11px" }}>
       {/* Header */}
-      <div className="flex justify-between items-start mb-4 border-b-2 border-[#1a365d] pb-4">
+      <div className="flex justify-between items-start mb-5 pb-4" style={{ borderBottom: "3px solid #C9A84C" }}>
         <div>
-          <h1 className="text-2xl font-bold text-[#1a365d]" style={{ fontFamily: "Georgia, serif" }}>Luciana Shoes</h1>
-          <p className="text-[10px] text-gray-500 tracking-widest uppercase mt-1">Factory Purchase Order</p>
+          <h1 className="text-3xl font-bold" style={{ fontFamily: "'Cinzel', Georgia, serif", color: "#1a1a1a", letterSpacing: "0.15em" }}>LUCIANA</h1>
+          <p className="text-[10px] tracking-[0.3em] uppercase mt-1" style={{ color: "#C9A84C" }}>Factory Purchase Order</p>
         </div>
         <div className="text-right text-[11px]">
-          <p className="font-bold text-[#1a365d]">PO-{order.order_number}</p>
+          <p className="font-bold text-lg" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", color: "#C9A84C" }}>PO-{order.order_number}</p>
           <p className="text-gray-600">{new Date(order.order_date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
           {order.season && <p className="text-gray-600">Season: {order.season}</p>}
+        </div>
+      </div>
+
+      {/* Customer Info */}
+      <div className="mb-4 flex gap-8 text-[11px]">
+        <div>
+          <p className="text-[10px] tracking-[0.2em] uppercase font-bold mb-1" style={{ color: "#C9A84C" }}>Customer</p>
+          <p className="font-bold text-sm">{order.clients?.company_name || "—"}</p>
+        </div>
+        <div>
+          <p className="text-[10px] tracking-[0.2em] uppercase font-bold mb-1" style={{ color: "#C9A84C" }}>Customer #</p>
+          <p className="font-bold text-sm">{order.clients?.customer_number || "—"}</p>
         </div>
       </div>
 
       {/* Table */}
       <table className="w-full border-collapse mb-4" style={{ fontSize: "10px" }}>
         <thead>
-          <tr className="bg-[#1a365d] text-white">
-            <th className="text-left p-1.5 border border-[#1a365d]">#</th>
-            <th className="text-left p-1.5 border border-[#1a365d]">Style</th>
-            <th className="text-left p-1.5 border border-[#1a365d]">Last</th>
-            <th className="text-left p-1.5 border border-[#1a365d]">Leather</th>
-            <th className="text-left p-1.5 border border-[#1a365d]">Sole</th>
+          <tr style={{ backgroundColor: "#1a1a1a", color: "#C9A84C" }}>
+            <th className="text-left p-1.5 border" style={{ borderColor: "#333" }}>#</th>
+            <th className="text-left p-1.5 border" style={{ borderColor: "#333" }}>Style</th>
+            <th className="text-left p-1.5 border" style={{ borderColor: "#333" }}>Last</th>
+            <th className="text-left p-1.5 border" style={{ borderColor: "#333" }}>Leather</th>
+            <th className="text-left p-1.5 border" style={{ borderColor: "#333" }}>Sole</th>
             {SIZES.map((s) => (
-              <th key={s} className="text-center p-1.5 border border-[#1a365d] w-10">{s}</th>
+              <th key={s} className="text-center p-1.5 border w-10" style={{ borderColor: "#333" }}>{s}</th>
             ))}
-            <th className="text-center p-1.5 border border-[#1a365d] font-bold bg-[#c9a84c] text-[#1a365d]">Total</th>
+            <th className="text-center p-1.5 border font-bold" style={{ borderColor: "#333", backgroundColor: "#C9A84C", color: "#1a1a1a" }}>Total</th>
           </tr>
         </thead>
         <tbody>
           {grouped.map((line, idx) => (
-            <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-              <td className="p-1.5 border border-gray-300 text-gray-400">{idx + 1}</td>
-              <td className="p-1.5 border border-gray-300 font-bold">{line.styleCode}</td>
-              <td className="p-1.5 border border-gray-300">{line.lastNumber}</td>
-              <td className="p-1.5 border border-gray-300">{line.leather}</td>
-              <td className="p-1.5 border border-gray-300">{line.sole}</td>
+            <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-[#faf9f6]"}>
+              <td className="p-1.5 border border-gray-200 text-gray-400">{idx + 1}</td>
+              <td className="p-1.5 border border-gray-200 font-bold">{line.styleCode}</td>
+              <td className="p-1.5 border border-gray-200">{line.lastNumber}</td>
+              <td className="p-1.5 border border-gray-200">{line.leather}</td>
+              <td className="p-1.5 border border-gray-200">{line.sole}</td>
               {SIZES.map((s) => (
-                <td key={s} className="p-1.5 border border-gray-300 text-center font-medium">
+                <td key={s} className="p-1.5 border border-gray-200 text-center font-medium">
                   {line.sizes[s] || ""}
                 </td>
               ))}
-              <td className="p-1.5 border border-gray-300 text-center font-bold bg-[#c9a84c]/10">{line.total}</td>
+              <td className="p-1.5 border border-gray-200 text-center font-bold" style={{ backgroundColor: "rgba(201,168,76,0.08)" }}>{line.total}</td>
             </tr>
           ))}
         </tbody>
         <tfoot>
-          <tr className="bg-[#1a365d] text-white font-bold">
-            <td colSpan={5} className="p-1.5 border border-[#1a365d] text-right uppercase tracking-wider">Grand Total</td>
+          <tr style={{ backgroundColor: "#1a1a1a", color: "#C9A84C" }}>
+            <td colSpan={5} className="p-1.5 border text-right uppercase tracking-wider font-bold" style={{ borderColor: "#333" }}>Grand Total</td>
             {SIZES.map((s) => {
               const colTotal = grouped.reduce((sum, l) => sum + (l.sizes[s] || 0), 0);
-              return <td key={s} className="p-1.5 border border-[#1a365d] text-center">{colTotal || ""}</td>;
+              return <td key={s} className="p-1.5 border text-center" style={{ borderColor: "#333" }}>{colTotal || ""}</td>;
             })}
-            <td className="p-1.5 border border-[#1a365d] text-center text-lg">{grandTotal}</td>
+            <td className="p-1.5 border text-center text-lg font-bold" style={{ borderColor: "#333", backgroundColor: "#C9A84C", color: "#1a1a1a" }}>{grandTotal}</td>
           </tr>
         </tfoot>
       </table>
 
       {/* Notes */}
-      <div className="border border-gray-300 rounded p-3 mb-4">
-        <h4 className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 font-bold">Special Instructions</h4>
+      <div className="border rounded p-3 mb-4" style={{ borderColor: "#C9A84C" }}>
+        <h4 className="text-[10px] uppercase tracking-[0.2em] mb-1 font-bold" style={{ color: "#C9A84C" }}>Special Instructions</h4>
         <div className="h-16"></div>
       </div>
 
       {/* Footer */}
       <div className="text-center text-[10px] text-gray-400 border-t pt-3">
-        <p className="font-bold text-[#c9a84c]">Luciana Shoes — Factory Order</p>
+        <p className="font-bold" style={{ color: "#C9A84C", fontFamily: "'Cinzel', Georgia, serif", letterSpacing: "0.15em" }}>LUCIANA — Factory Order</p>
       </div>
     </div>
   );
