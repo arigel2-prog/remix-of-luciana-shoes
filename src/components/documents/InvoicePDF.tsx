@@ -27,6 +27,7 @@ interface OrderData {
     city: string | null;
     state: string | null;
     zip_code: string | null;
+    customer_number: string | null;
   } | null;
 }
 
@@ -42,15 +43,15 @@ const InvoicePDF = forwardRef<HTMLDivElement, Props>(({ order, items, payments =
   const balance = Number(order.total_amount || 0) - totalPaid;
 
   return (
-    <div ref={ref} className="bg-white text-black p-10 max-w-[800px] mx-auto text-sm" style={{ fontFamily: "Arial, sans-serif" }}>
+    <div ref={ref} className="bg-white text-black p-10 max-w-[800px] mx-auto text-sm" style={{ fontFamily: "'Raleway', Arial, sans-serif" }}>
       {/* Header */}
-      <div className="flex justify-between items-start mb-8 border-b-2 border-[#1a365d] pb-6">
+      <div className="flex justify-between items-start mb-8 pb-6" style={{ borderBottom: "3px solid #C9A84C" }}>
         <div>
-          <h1 className="text-3xl font-bold text-[#1a365d]" style={{ fontFamily: "Georgia, serif" }}>Luciana</h1>
-          <p className="text-xs text-gray-500 tracking-widest uppercase mt-1">Fine Accessories</p>
+          <h1 className="text-3xl font-bold" style={{ fontFamily: "'Cinzel', Georgia, serif", color: "#1a1a1a", letterSpacing: "0.15em" }}>LUCIANA</h1>
+          <p className="text-[10px] tracking-[0.3em] uppercase mt-1" style={{ color: "#C9A84C" }}>Wholesale · Made in Spain</p>
         </div>
         <div className="text-right">
-          <h2 className="text-lg font-bold text-[#1a365d] uppercase tracking-wider">Invoice</h2>
+          <h2 className="text-lg font-bold uppercase tracking-wider" style={{ color: "#C9A84C", fontFamily: "'Cormorant Garamond', Georgia, serif" }}>Invoice</h2>
           <p className="text-gray-600 mt-1">INV-{order.order_number}</p>
           <p className="text-gray-600">{new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
         </div>
@@ -59,8 +60,9 @@ const InvoicePDF = forwardRef<HTMLDivElement, Props>(({ order, items, payments =
       {/* Client Info */}
       <div className="grid grid-cols-2 gap-8 mb-8">
         <div>
-          <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-2 font-bold">Bill To</h3>
+          <h3 className="text-[10px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: "#C9A84C" }}>Bill To</h3>
           <p className="font-bold text-base">{order.clients?.company_name}</p>
+          {order.clients?.customer_number && <p className="text-gray-500 text-xs">Customer #{order.clients.customer_number}</p>}
           {order.clients?.contact_name && <p>{order.clients.contact_name}</p>}
           {order.clients?.address && <p>{order.clients.address}</p>}
           {(order.clients?.city || order.clients?.state) && (
@@ -69,7 +71,7 @@ const InvoicePDF = forwardRef<HTMLDivElement, Props>(({ order, items, payments =
           {order.clients?.email && <p>{order.clients.email}</p>}
         </div>
         <div className="text-right">
-          <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-2 font-bold">Invoice Details</h3>
+          <h3 className="text-[10px] uppercase tracking-[0.2em] mb-2 font-bold" style={{ color: "#C9A84C" }}>Invoice Details</h3>
           <p><span className="text-gray-500">Order:</span> #{order.order_number}</p>
           <p><span className="text-gray-500">Order Date:</span> {new Date(order.order_date).toLocaleDateString()}</p>
           {order.season && <p><span className="text-gray-500">Season:</span> {order.season}</p>}
@@ -80,7 +82,7 @@ const InvoicePDF = forwardRef<HTMLDivElement, Props>(({ order, items, payments =
       {/* Items Table */}
       <table className="w-full border-collapse mb-8">
         <thead>
-          <tr className="bg-[#1a365d] text-white">
+          <tr style={{ backgroundColor: "#1a1a1a", color: "#C9A84C" }}>
             <th className="text-left p-2 text-xs uppercase">Style Code</th>
             <th className="text-left p-2 text-xs uppercase">Description</th>
             <th className="text-left p-2 text-xs uppercase">Size</th>
@@ -92,8 +94,8 @@ const InvoicePDF = forwardRef<HTMLDivElement, Props>(({ order, items, payments =
         </thead>
         <tbody>
           {items.map((item, idx) => (
-            <tr key={item.id} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-              <td className="p-2 font-mono font-bold text-[#1a365d]">{item.styles?.style_code}</td>
+            <tr key={item.id} className={idx % 2 === 0 ? "bg-white" : "bg-[#faf9f6]"}>
+              <td className="p-2 font-mono font-bold" style={{ color: "#C9A84C" }}>{item.styles?.style_code}</td>
               <td className="p-2">{item.styles?.name}</td>
               <td className="p-2 text-gray-600">{item.size || "—"}</td>
               <td className="p-2 text-gray-600">{item.color || "—"}</td>
@@ -130,9 +132,9 @@ const InvoicePDF = forwardRef<HTMLDivElement, Props>(({ order, items, payments =
               </div>
             </>
           )}
-          <div className={`flex justify-between py-3 text-lg px-3 mt-2 ${balance > 0 ? "bg-red-700" : "bg-[#1a365d]"} text-white`}>
+          <div className={`flex justify-between py-3 text-lg px-3 mt-2 text-white`} style={{ backgroundColor: balance > 0 ? "#991b1b" : "#1a1a1a" }}>
             <span className="font-bold">Balance Due</span>
-            <span className="font-bold">${balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+            <span className="font-bold" style={{ color: balance > 0 ? "#fff" : "#C9A84C" }}>${balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
           </div>
         </div>
       </div>
@@ -140,7 +142,7 @@ const InvoicePDF = forwardRef<HTMLDivElement, Props>(({ order, items, payments =
       {/* Footer */}
       <div className="mt-8 text-center text-xs text-gray-400 border-t pt-4">
         <p>Payment due within 30 days of invoice date. Thank you for your business.</p>
-        <p className="mt-1 font-bold text-[#c9a84c]">Luciana Fine Accessories</p>
+        <p className="mt-1 font-bold" style={{ color: "#C9A84C", fontFamily: "'Cinzel', Georgia, serif", letterSpacing: "0.15em" }}>LUCIANA</p>
       </div>
     </div>
   );
