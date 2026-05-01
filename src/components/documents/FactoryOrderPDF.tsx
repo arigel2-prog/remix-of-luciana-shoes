@@ -86,10 +86,6 @@ const FactoryOrderPDF = forwardRef<HTMLDivElement, Props>(({ order, items }, ref
       {/* Customer Info */}
       <div className="mb-4 flex gap-8 text-[11px]">
         <div>
-          <p className="text-[10px] tracking-[0.2em] uppercase font-bold mb-1" style={{ color: "#C9A84C" }}>Customer</p>
-          <p className="font-bold text-sm">{order.clients?.company_name || "—"}</p>
-        </div>
-        <div>
           <p className="text-[10px] tracking-[0.2em] uppercase font-bold mb-1" style={{ color: "#C9A84C" }}>Customer #</p>
           <p className="font-bold text-sm">{order.clients?.customer_number || "—"}</p>
         </div>

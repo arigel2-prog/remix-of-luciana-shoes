@@ -291,23 +291,51 @@ export default function OrderDetail() {
 
   const handlePrint = () => {
     const content = printRef.current;
-    if (!content) return;
-    const win = window.open("", "_blank");
-    if (!win) return;
-    win.document.write(`
-      <html><head><title>Luciana - ${activeDoc}</title>
-      <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { padding: 6px 8px; text-align: left; font-size: 12px; }
-        @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-      </style>
-      </head><body>${content.innerHTML}</body></html>
-    `);
+    if (!content) {
+      toast.error("Document not ready");
+      return;
+    }
+    const win = window.open("", "_blank", "width=900,height=1000");
+    if (!win) {
+      toast.error("Pop-ups are blocked. Please allow pop-ups for this site to print or download PDFs.");
+      return;
+    }
+    win.document.open();
+    win.document.write(`<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Luciana - ${activeDoc}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:wght@400;500;600;700&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html, body { background:#fff; color:#000; font-family:'Raleway', Arial, sans-serif; }
+    @page { size: A4; margin: 12mm; }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display:none !important; }
+    }
+    .toolbar { position:sticky; top:0; background:#18181A; color:#E2C26A; padding:10px 16px; display:flex; gap:8px; justify-content:flex-end; border-bottom:1px solid #C9A84C; }
+    .toolbar button { background: linear-gradient(135deg,#C9A84C,#E2C26A); color:#18181A; border:0; padding:8px 16px; border-radius:4px; font-weight:600; cursor:pointer; font-family:'Raleway',sans-serif; letter-spacing:0.05em; text-transform:uppercase; font-size:12px; }
+    .toolbar button.secondary { background:transparent; color:#E2C26A; border:1px solid #C9A84C; }
+  </style>
+</head>
+<body>
+  <div class="toolbar no-print">
+    <button class="secondary" onclick="window.close()">Close</button>
+    <button onclick="window.print()">Print / Save as PDF</button>
+  </div>
+  <div>${content.innerHTML}</div>
+  <script>
+    window.addEventListener('load', function () {
+      setTimeout(function () { window.focus(); window.print(); }, 600);
+    });
+  </script>
+</body>
+</html>`);
     win.document.close();
-    win.focus();
-    setTimeout(() => { win.print(); win.close(); }, 300);
   };
 
   const docButtons = [
