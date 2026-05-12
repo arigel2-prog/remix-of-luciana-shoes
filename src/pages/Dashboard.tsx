@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AppLayout } from "@/components/AppLayout";
+import { E2ETestRunner } from "@/components/E2ETestRunner";
 import { Gem, Users, ShoppingCart, DollarSign, ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 type DrillDown = "styles" | "clients" | "orders" | "collected" | null;
@@ -58,6 +59,9 @@ export default function Dashboard() {
   return (
     <AppLayout>
       <div className="space-y-8">
+        <div className="flex items-center justify-end">
+          <E2ETestRunner />
+        </div>
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat) => (
