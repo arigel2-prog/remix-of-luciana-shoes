@@ -59,6 +59,9 @@ export default function Dashboard() {
   return (
     <AppLayout>
       <div className="space-y-8">
+        <div className="flex items-center justify-end">
+          <E2ETestRunner />
+        </div>
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat) => (
