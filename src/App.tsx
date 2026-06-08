@@ -35,6 +35,8 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/accept-invite" element={<AcceptInvite />} />
+          <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/catalog" element={<ProtectedRoute><Catalog /></ProtectedRoute>} />
           <Route path="/catalog/:id" element={<ProtectedRoute><StyleDetail /></ProtectedRoute>} />
