@@ -18,6 +18,8 @@ import Analytics from "./pages/Analytics";
 import WholesaleLogin from "./pages/WholesaleLogin";
 import WholesaleDashboard from "./pages/WholesaleDashboard";
 import AdminLogin from "./pages/AdminLogin";
+import Team from "./pages/Team";
+import AcceptInvite from "./pages/AcceptInvite";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 
