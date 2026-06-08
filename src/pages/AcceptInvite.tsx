@@ -95,7 +95,7 @@ export default function AcceptInvite() {
       <div className="container mx-auto p-6 max-w-md">
         <Card className="p-6">
           <h1 className="text-xl mb-2">Invitation unavailable</h1>
-          <p className="text-muted-foreground">{info.error}</p>
+          <p className="text-muted-foreground">{"error" in info ? info.error : "Unknown error"}</p>
         </Card>
       </div>
     );
