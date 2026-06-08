@@ -17,7 +17,11 @@ import Finance from "./pages/Finance";
 import Analytics from "./pages/Analytics";
 import WholesaleLogin from "./pages/WholesaleLogin";
 import WholesaleDashboard from "./pages/WholesaleDashboard";
+import AdminLogin from "./pages/AdminLogin";
+import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
+
+
 
 const queryClient = new QueryClient();
 
@@ -28,18 +32,19 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/catalog" element={<Catalog />} />
-          <Route path="/catalog/:id" element={<StyleDetail />} />
-          <Route path="/clients" element={<Clients />} />
-          <Route path="/clients/:id" element={<ClientDetail />} />
-          <Route path="/orders" element={<Orders />} />
-          <Route path="/orders/new" element={<NewOrder />} />
-          <Route path="/orders/:id" element={<OrderDetail />} />
-          <Route path="/collections" element={<Collections />} />
-          <Route path="/factory-check" element={<FactoryCrossCheck />} />
-          <Route path="/finance" element={<Finance />} />
-          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/catalog" element={<ProtectedRoute><Catalog /></ProtectedRoute>} />
+          <Route path="/catalog/:id" element={<ProtectedRoute><StyleDetail /></ProtectedRoute>} />
+          <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
+          <Route path="/clients/:id" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
+          <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+          <Route path="/orders/new" element={<ProtectedRoute><NewOrder /></ProtectedRoute>} />
+          <Route path="/orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
+          <Route path="/collections" element={<ProtectedRoute><Collections /></ProtectedRoute>} />
+          <Route path="/factory-check" element={<ProtectedRoute><FactoryCrossCheck /></ProtectedRoute>} />
+          <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="/wholesale/login" element={<WholesaleLogin />} />
           <Route path="/wholesale" element={<WholesaleDashboard />} />
           <Route path="*" element={<NotFound />} />
