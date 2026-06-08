@@ -18,6 +18,8 @@ import Analytics from "./pages/Analytics";
 import WholesaleLogin from "./pages/WholesaleLogin";
 import WholesaleDashboard from "./pages/WholesaleDashboard";
 import AdminLogin from "./pages/AdminLogin";
+import Team from "./pages/Team";
+import AcceptInvite from "./pages/AcceptInvite";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +35,8 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/accept-invite" element={<AcceptInvite />} />
+          <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/catalog" element={<ProtectedRoute><Catalog /></ProtectedRoute>} />
           <Route path="/catalog/:id" element={<ProtectedRoute><StyleDetail /></ProtectedRoute>} />
