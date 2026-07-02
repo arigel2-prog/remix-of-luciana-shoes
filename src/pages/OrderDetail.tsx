@@ -295,48 +295,52 @@ export default function OrderDetail() {
       toast.error("Document not ready");
       return;
     }
-    const win = window.open("", "_blank", "width=900,height=1000");
-    if (!win) {
-      toast.error("Pop-ups are blocked. Please allow pop-ups for this site to print or download PDFs.");
-      return;
-    }
-    win.document.open();
-    win.document.write(`<!doctype html>
+
+    const html = `<!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Luciana - ${activeDoc}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:wght@400;500;600;700&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    html, body { background:#fff; color:#000; font-family:'Raleway', Arial, sans-serif; }
+    html, body { background:#fff; color:#000; font-family:'Raleway', Arial, sans-serif; margin:0; }
     @page { size: A4; margin: 12mm; }
     @media print {
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .no-print { display:none !important; }
     }
-    .toolbar { position:sticky; top:0; background:#18181A; color:#E2C26A; padding:10px 16px; display:flex; gap:8px; justify-content:flex-end; border-bottom:1px solid #C9A84C; }
-    .toolbar button { background: linear-gradient(135deg,#C9A84C,#E2C26A); color:#18181A; border:0; padding:8px 16px; border-radius:4px; font-weight:600; cursor:pointer; font-family:'Raleway',sans-serif; letter-spacing:0.05em; text-transform:uppercase; font-size:12px; }
+    .toolbar { position:sticky; top:0; z-index:50; background:#18181A; color:#E2C26A; padding:10px 12px; display:flex; gap:8px; justify-content:flex-end; border-bottom:1px solid #C9A84C; flex-wrap:wrap; }
+    .toolbar button { background: linear-gradient(135deg,#C9A84C,#E2C26A); color:#18181A; border:0; padding:10px 16px; border-radius:4px; font-weight:600; cursor:pointer; font-family:'Raleway',sans-serif; letter-spacing:0.05em; text-transform:uppercase; font-size:12px; }
     .toolbar button.secondary { background:transparent; color:#E2C26A; border:1px solid #C9A84C; }
+    .doc-wrap { padding: 8px; }
   </style>
 </head>
 <body>
   <div class="toolbar no-print">
-    <button class="secondary" onclick="window.close()">Close</button>
+    <button class="secondary" onclick="history.back()">← Back</button>
     <button onclick="window.print()">Print / Save as PDF</button>
   </div>
-  <div>${content.innerHTML}</div>
-  <script>
-    window.addEventListener('load', function () {
-      setTimeout(function () { window.focus(); window.print(); }, 600);
-    });
-  </script>
+  <div class="doc-wrap">${content.innerHTML}</div>
 </body>
-</html>`);
-    win.document.close();
+</html>`;
+
+    // Use a blob URL so mobile browsers (which often block window.open with about:blank)
+    // can still open the printable page. Fall back to same-tab navigation if blocked.
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+
+    const win = window.open(url, "_blank");
+    if (!win) {
+      window.location.href = url;
+      return;
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
   };
+
 
   const docButtons = [
     { type: "confirmation" as const, label: "Order Confirmation", icon: FileText },
