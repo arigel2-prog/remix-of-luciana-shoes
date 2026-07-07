@@ -296,10 +296,14 @@ export default function OrderDetail() {
       return;
     }
     const filename = `Luciana-${activeDoc}-${order.order_number}.pdf`;
+    // Pre-open a tab synchronously so iOS Safari doesn't block it after the async work
+    const ua = navigator.userAgent;
+    const isIOS = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
+    const preOpened = isIOS ? window.open("", "_blank") : null;
     try {
       toast.loading("Generating PDF…", { id: "pdfgen" });
       const html2pdf = (await import("html2pdf.js")).default as any;
-      await html2pdf()
+      const pdf = await html2pdf()
         .set({
           margin: [8, 8, 8, 8],
           filename,
@@ -308,15 +312,38 @@ export default function OrderDetail() {
           jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
           pagebreak: { mode: ["css", "legacy"] },
         })
-
         .from(content)
-        .save();
-      toast.success("PDF downloaded", { id: "pdfgen" });
+        .toPdf()
+        .get("pdf");
+
+      const blob: Blob = pdf.output("blob");
+      const url = URL.createObjectURL(blob);
+
+      if (isIOS) {
+        // iOS Safari ignores <a download>; open the PDF so the user can tap Share → Save to Files
+        if (preOpened) {
+          preOpened.location.href = url;
+        } else {
+          window.location.href = url;
+        }
+        toast.success("PDF opened — tap Share to save", { id: "pdfgen" });
+      } else {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        toast.success("PDF downloaded", { id: "pdfgen" });
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (e) {
       console.error(e);
+      if (preOpened) preOpened.close();
       toast.error("Failed to generate PDF", { id: "pdfgen" });
     }
   };
+
 
 
 
