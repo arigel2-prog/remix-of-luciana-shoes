@@ -298,7 +298,7 @@ export default function OrderDetail() {
     const filename = `Luciana-${activeDoc}-${order.order_number}.pdf`;
     try {
       toast.loading("Generating PDF…", { id: "pdfgen" });
-      const html2pdf = (await import("html2pdf.js")).default;
+      const html2pdf = (await import("html2pdf.js")).default as any;
       await html2pdf()
         .set({
           margin: [8, 8, 8, 8],
@@ -308,6 +308,7 @@ export default function OrderDetail() {
           jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
           pagebreak: { mode: ["css", "legacy"] },
         })
+
         .from(content)
         .save();
       toast.success("PDF downloaded", { id: "pdfgen" });
