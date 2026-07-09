@@ -307,7 +307,7 @@ export default function OrderDetail() {
         <!doctype html>
         <html>
           <head>
-            <title>${filename}</title>
+            <title>Luciana PDF</title>
             <meta name="viewport" content="width=device-width, initial-scale=1" />
             <style>
               body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #18181A; color: #C9A84C; font-family: Arial, sans-serif; }
