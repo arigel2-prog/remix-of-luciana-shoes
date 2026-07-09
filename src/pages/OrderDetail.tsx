@@ -296,6 +296,29 @@ export default function OrderDetail() {
       return;
     }
     const filename = `Luciana-${activeDoc}-${order.order_number}.pdf`;
+    const ua = navigator.userAgent;
+    const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isAndroid = /Android/i.test(ua);
+    const isMobile = isIOS || isAndroid;
+    const pdfWindow = isMobile ? window.open("", "_blank") : null;
+
+    if (pdfWindow) {
+      pdfWindow.document.write(`
+        <!doctype html>
+        <html>
+          <head>
+            <title>${filename}</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <style>
+              body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #18181A; color: #C9A84C; font-family: Arial, sans-serif; }
+            </style>
+          </head>
+          <body>Preparing PDF…</body>
+        </html>
+      `);
+      pdfWindow.document.close();
+    }
+
     try {
       toast.loading("Generating PDF…", { id: "pdfgen" });
       const html2pdf = (await import("html2pdf.js")).default as any;
@@ -315,28 +338,20 @@ export default function OrderDetail() {
       // Force filename + application/pdf mime so browsers treat it as a real attachment
       const rawBlob: Blob = pdf.output("blob");
       const blob = new Blob([await rawBlob.arrayBuffer()], { type: "application/pdf" });
-      const file = new File([blob], filename, { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
 
-      const nav: any = navigator;
-      const ua = navigator.userAgent;
-      const isIOS = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
-
-      // iOS/Android: use the native share sheet so the user can save to Files, Mail, WhatsApp, etc.
-      if (nav.canShare && nav.canShare({ files: [file] })) {
-        try {
-          await nav.share({ files: [file], title: filename });
-          toast.success("PDF ready", { id: "pdfgen" });
-          return;
-        } catch (err: any) {
-          if (err?.name === "AbortError") {
-            toast.dismiss("pdfgen");
-            return;
-          }
-          // fall through to download fallback
+      if (isMobile) {
+        if (pdfWindow) {
+          pdfWindow.location.href = url;
+          pdfWindow.focus();
+        } else {
+          window.location.href = url;
         }
+        toast.success("PDF opened — use Share or Download to save", { id: "pdfgen" });
+        setTimeout(() => URL.revokeObjectURL(url), 10 * 60_000);
+        return;
       }
 
-      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
@@ -345,16 +360,11 @@ export default function OrderDetail() {
       a.click();
       document.body.removeChild(a);
 
-      if (isIOS) {
-        // iOS Safari ignores <a download> — open inline so the user can tap Share → Save to Files
-        setTimeout(() => { window.location.href = url; }, 100);
-        toast.success("PDF opened — tap Share to save", { id: "pdfgen" });
-      } else {
-        toast.success("PDF downloaded", { id: "pdfgen" });
-      }
+      toast.success("PDF downloaded", { id: "pdfgen" });
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (e) {
       console.error(e);
+      pdfWindow?.close();
       toast.error("Failed to generate PDF", { id: "pdfgen" });
     }
   };
