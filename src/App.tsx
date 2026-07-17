@@ -15,6 +15,7 @@ import Collections from "./pages/Collections";
 import FactoryCrossCheck from "./pages/FactoryCrossCheck";
 import Finance from "./pages/Finance";
 import Analytics from "./pages/Analytics";
+import DeliveryIssues from "./pages/DeliveryIssues";
 import WholesaleLogin from "./pages/WholesaleLogin";
 import WholesaleDashboard from "./pages/WholesaleDashboard";
 import AdminLogin from "./pages/AdminLogin";
@@ -49,6 +50,7 @@ const App = () => (
           <Route path="/factory-check" element={<ProtectedRoute><FactoryCrossCheck /></ProtectedRoute>} />
           <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+          <Route path="/delivery-issues" element={<ProtectedRoute><DeliveryIssues /></ProtectedRoute>} />
           <Route path="/wholesale/login" element={<WholesaleLogin />} />
           <Route path="/wholesale" element={<WholesaleDashboard />} />
           <Route path="*" element={<NotFound />} />
