@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AppLayout } from "@/components/AppLayout";
 import { E2ETestRunner } from "@/components/E2ETestRunner";
-import { Gem, Users, ShoppingCart, DollarSign, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Gem, Users, ShoppingCart, DollarSign, ArrowUpRight, ArrowDownRight, AlertTriangle } from "lucide-react";
 
 type DrillDown = "styles" | "clients" | "orders" | "collected" | null;
 
@@ -91,6 +91,9 @@ export default function Dashboard() {
           ))}
         </div>
 
+        {/* Urgent To-Dos */}
+        <UrgentDeliveryIssues />
+
         {/* Panels */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="bg-card border-border">
@@ -131,6 +134,56 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
     </AppLayout>
+  );
+}
+
+function UrgentDeliveryIssues() {
+  const navigate = useNavigate();
+  const { data: issues } = useQuery({
+    queryKey: ["delivery-issues-open"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("delivery_issues")
+        .select("id, issue_type, notes, created_at, order_id, orders(order_number, clients(company_name))")
+        .eq("status", "open")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      return data ?? [];
+    },
+  });
+  if (!issues || issues.length === 0) return null;
+  return (
+    <Card className="bg-card border-red-500/30">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="font-display text-xl flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5 text-red-400" />
+          Urgent To-Dos — Delivery Issues
+          <span className="text-sm font-sans font-normal text-red-400">({issues.length})</span>
+        </CardTitle>
+        <button onClick={() => navigate("/delivery-issues")} className="text-sm font-sans text-primary hover:text-gold-light transition-colors">
+          View all →
+        </button>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {issues.map((i: any) => (
+          <button
+            key={i.id}
+            onClick={() => navigate(`/orders/${i.order_id}`)}
+            className="w-full text-left flex items-start gap-3 p-3 rounded border border-border hover:border-primary/30 transition-colors"
+          >
+            <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="uppercase text-xs tracking-wider font-medium text-foreground">{i.issue_type}</span>
+                <span className="text-primary">Order {i.orders?.order_number}</span>
+                <span className="text-muted-foreground truncate">· {i.orders?.clients?.company_name}</span>
+              </div>
+              {i.notes && <p className="text-muted-foreground truncate">{i.notes}</p>}
+            </div>
+          </button>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 
