@@ -20,6 +20,7 @@ import InvoicePDF from "@/components/documents/InvoicePDF";
 import FactoryOrderPDF from "@/components/documents/FactoryOrderPDF";
 import { OrderLineRow, OrderLineData, SIZES } from "@/components/orders/OrderLineRow";
 import { OrderStatusTracker } from "@/components/orders/OrderStatusTracker";
+import { DeliveryChecklist } from "@/components/orders/DeliveryChecklist";
 
 type DocType = "confirmation" | "packing" | "invoice" | "factory" | null;
 
@@ -605,6 +606,13 @@ export default function OrderDetail() {
             </Table>
           </CardContent>
         </Card>
+
+        {/* Delivery Verification */}
+        {items && items.length > 0 && (
+          <DeliveryChecklist orderId={order.id} items={items as any} />
+        )}
+
+
 
         {/* Document Preview Dialog */}
         <Dialog open={activeDoc !== null} onOpenChange={() => setActiveDoc(null)}>

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Gem, Users, ShoppingCart, Plus, DollarSign, ClipboardCheck, TrendingUp, Sparkles } from "lucide-react";
+import { LayoutDashboard, Gem, Users, ShoppingCart, Plus, DollarSign, ClipboardCheck, TrendingUp, Sparkles, AlertTriangle } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +22,7 @@ const menuItems = [
   { title: "Collections", url: "/collections", icon: DollarSign },
   { title: "Finance", url: "/finance", icon: TrendingUp },
   { title: "Factory Check", url: "/factory-check", icon: ClipboardCheck },
+  { title: "Delivery Issues", url: "/delivery-issues", icon: AlertTriangle },
   { title: "AI Analytics", url: "/analytics", icon: Sparkles },
 ];
 
