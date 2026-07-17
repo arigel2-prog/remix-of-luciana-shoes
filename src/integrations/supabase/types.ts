@@ -101,6 +101,63 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_issues: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          issue_type: Database["public"]["Enums"]["delivery_issue_type"]
+          notes: string | null
+          order_id: string
+          order_item_id: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: Database["public"]["Enums"]["delivery_issue_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          issue_type: Database["public"]["Enums"]["delivery_issue_type"]
+          notes?: string | null
+          order_id: string
+          order_item_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["delivery_issue_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          issue_type?: Database["public"]["Enums"]["delivery_issue_type"]
+          notes?: string | null
+          order_id?: string
+          order_item_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["delivery_issue_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_issues_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_issues_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses: {
         Row: {
           amount: number
@@ -139,6 +196,54 @@ export type Database = {
           vendor?: string | null
         }
         Relationships: []
+      }
+      order_item_checks: {
+        Row: {
+          checked_at: string | null
+          checked_by: string | null
+          created_at: string
+          id: string
+          order_id: string
+          order_item_id: string
+          updated_at: string
+          verified: boolean
+        }
+        Insert: {
+          checked_at?: string | null
+          checked_by?: string | null
+          created_at?: string
+          id?: string
+          order_id: string
+          order_item_id: string
+          updated_at?: string
+          verified?: boolean
+        }
+        Update: {
+          checked_at?: string | null
+          checked_by?: string | null
+          created_at?: string
+          id?: string
+          order_id?: string
+          order_item_id?: string
+          updated_at?: string
+          verified?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_item_checks_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_item_checks_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: true
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_items: {
         Row: {
@@ -443,6 +548,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "wholesale"
+      delivery_issue_status: "open" | "resolved"
+      delivery_issue_type: "missing" | "wrong" | "damaged" | "extra"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -571,6 +678,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "wholesale"],
+      delivery_issue_status: ["open", "resolved"],
+      delivery_issue_type: ["missing", "wrong", "damaged", "extra"],
     },
   },
 } as const
