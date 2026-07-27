@@ -63,8 +63,10 @@ export function StyleCombobox({ styles, value, onSelect }: StyleComboboxProps) {
           />
         </div>
         <div className="max-h-[240px] overflow-y-auto">
-          {filtered.length === 0 ? (
-            <p className="text-sm text-muted-foreground p-3 text-center">No styles found</p>
+          {styles.length === 0 ? (
+            <p className="text-sm text-muted-foreground p-3 text-center">Loading styles…</p>
+          ) : filtered.length === 0 ? (
+            <p className="text-sm text-muted-foreground p-3 text-center">No styles match "{search}"</p>
           ) : (
             filtered.map((s) => (
               <button
