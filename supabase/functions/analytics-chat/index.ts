@@ -1,66 +1,116 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.0";
+// AI Analytics assistant for the Luciana Shoes back-office.
+//
+// Calls the Anthropic Messages API directly (no Lovable AI gateway), and streams
+// the reply back in OpenAI chat-completion chunk shape so the existing reader in
+// src/pages/Analytics.tsx keeps working unchanged.
+//
+// Deploy with JWT verification OFF: this function does its own auth below,
+// resolving the caller from the Authorization header and requiring the admin
+// role. Supabase's built-in verify_jwt would reject the request before any of
+// that runs.
+//
+// Required secret: ANTHROPIC_API_KEY
+// (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected by the platform.)
+
+import Anthropic from "npm:@anthropic-ai/sdk@0.121.0";
+import { createClient } from "npm:@supabase/supabase-js@2.100.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-serve(async (req) => {
+const MODEL = "claude-opus-5";
+
+function json(body: unknown, status: number) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+type Msg = { role: "user" | "assistant"; content: string };
+
+/**
+ * The Messages API requires the conversation to start with a user turn and to
+ * alternate. The chat UI can produce two assistant turns in a row (a partial
+ * stream followed by an error bubble), so normalise before sending rather than
+ * letting the API reject the whole request.
+ */
+function normaliseMessages(raw: unknown): Msg[] {
+  if (!Array.isArray(raw)) return [];
+  const cleaned: Msg[] = [];
+  for (const m of raw) {
+    if (!m || typeof m !== "object") continue;
+    const role = (m as Msg).role;
+    const content = (m as Msg).content;
+    if (role !== "user" && role !== "assistant") continue;
+    if (typeof content !== "string" || content.trim() === "") continue;
+    cleaned.push({ role, content });
+  }
+  while (cleaned.length && cleaned[0].role !== "user") cleaned.shift();
+
+  const merged: Msg[] = [];
+  for (const m of cleaned) {
+    const last = merged[merged.length - 1];
+    if (last && last.role === m.role) last.content += "\n\n" + m.content;
+    else merged.push({ ...m });
+  }
+  return merged;
+}
+
+/** One OpenAI-shaped SSE chunk, which is what the browser-side reader parses. */
+function sseChunk(text: string) {
+  return `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\n`;
+}
+
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    // Require authenticated admin
     const authHeader = req.headers.get("Authorization") ?? "";
-    const token = authHeader.replace("Bearer ", "");
-    if (!token) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const token = authHeader.replace("Bearer ", "").trim();
+    if (!token) return json({ error: "Unauthorized" }, 401);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const sb = createClient(supabaseUrl, supabaseKey);
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const sb = createClient(supabaseUrl, serviceKey);
 
+    // The caller must be a signed-in user, so this must be their access token —
+    // the anon/publishable key is not a user JWT and resolves to no user here.
     const { data: userData, error: userErr } = await sb.auth.getUser(token);
-    if (userErr || !userData?.user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (userErr || !userData?.user) return json({ error: "Unauthorized" }, 401);
+
     const { data: roleRow } = await sb
       .from("user_roles")
       .select("role")
       .eq("user_id", userData.user.id)
       .eq("role", "admin")
       .maybeSingle();
-    if (!roleRow) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), {
-        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!roleRow) return json({ error: "Forbidden" }, 403);
+
+    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!apiKey) {
+      console.error("ANTHROPIC_API_KEY secret is not set");
+      return json({ error: "AI is not configured. Set the ANTHROPIC_API_KEY secret." }, 500);
     }
 
-    const { messages } = await req.json();
-    if (!messages || !Array.isArray(messages)) {
-      return new Response(JSON.stringify({ error: "messages array required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const body = await req.json().catch(() => ({}));
+    const messages = normaliseMessages(body?.messages);
+    if (messages.length === 0) return json({ error: "messages array required" }, 400);
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-
-
-
-    const [ordersRes, clientsRes, stylesRes, itemsRes, paymentsRes, expensesRes] = await Promise.all([
-      sb.from("orders").select("id, order_number, client_id, order_date, status, season, total_amount"),
-      sb.from("clients").select("id, company_name, customer_number, contact_name, email, city, state"),
-      sb.from("styles").select("id, style_code, name, wholesale_price, retail_price, category, season, is_active"),
-      sb.from("order_items").select("id, order_id, style_id, quantity, unit_price, total_price, size, color"),
-      sb.from("payments").select("id, order_id, client_id, amount, payment_date, payment_method"),
-      sb.from("expenses").select("id, description, category, amount, expense_date, season, vendor"),
-    ]);
+    // Ordering by id keeps the snapshot byte-identical between turns, so the
+    // cached system prompt below actually gets a hit instead of silently missing.
+    const [ordersRes, clientsRes, stylesRes, itemsRes, paymentsRes, expensesRes] =
+      await Promise.all([
+        sb.from("orders").select("id, order_number, client_id, order_date, status, season, total_amount").order("id"),
+        sb.from("clients").select("id, company_name, customer_number, contact_name, email, city, state").order("id"),
+        sb.from("styles").select("id, style_code, name, wholesale_price, retail_price, category, season, is_active").order("id"),
+        sb.from("order_items").select("id, order_id, style_id, quantity, unit_price, total_price, size, color").order("id"),
+        sb.from("payments").select("id, order_id, client_id, amount, payment_date, payment_method").order("id"),
+        sb.from("expenses").select("id, description, category, amount, expense_date, season, vendor").order("id"),
+      ]);
 
     const contextData = {
       orders: ordersRes.data || [],
@@ -103,47 +153,88 @@ When answering:
 - Be specific with numbers, don't round unless asked
 - If data is empty, say so clearly and suggest the user add data first`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-        stream: true,
-      }),
+    const anthropic = new Anthropic({ apiKey });
+
+    const stream = anthropic.messages.stream({
+      model: MODEL,
+      max_tokens: 32000,
+      // The analytics questions involve real aggregation across tables, so let
+      // the model reason before answering.
+      thinking: { type: "adaptive" },
+      system: [
+        {
+          type: "text",
+          text: systemPrompt,
+          // The snapshot is the bulk of the tokens and is stable across the turns
+          // of one conversation, so cache it rather than re-reading it every turn.
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      messages,
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds in Settings > Workspace > Usage." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "AI service error" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const encoder = new TextEncoder();
+    const sse = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const event of stream) {
+            if (
+              event.type === "content_block_delta" &&
+              event.delta.type === "text_delta"
+            ) {
+              controller.enqueue(encoder.encode(sseChunk(event.delta.text)));
+            }
+          }
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+          const final = await stream.finalMessage();
+          if (final.stop_reason === "refusal") {
+            controller.enqueue(
+              encoder.encode(
+                sseChunk("\n\n_The model declined to answer that request._"),
+              ),
+            );
+          } else if (final.stop_reason === "max_tokens") {
+            controller.enqueue(
+              encoder.encode(
+                sseChunk("\n\n_(Response truncated — ask for a narrower slice.)_"),
+              ),
+            );
+          }
+        } catch (e) {
+          // The response has already started, so the HTTP status is committed.
+          // Surface the failure in the stream instead of losing it.
+          console.error("analytics-chat stream error:", e);
+          const msg = e instanceof Anthropic.APIError && e.status === 429
+            ? "Rate limited by the Anthropic API. Please try again in a moment."
+            : e instanceof Error
+            ? e.message
+            : "AI service error";
+          controller.enqueue(encoder.encode(sseChunk(`\n\n⚠️ ${msg}`)));
+        } finally {
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+        }
+      },
+      cancel() {
+        stream.abort();
+      },
+    });
+
+    return new Response(sse, {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
     });
   } catch (e) {
     console.error("analytics-chat error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    if (e instanceof Anthropic.APIError) {
+      if (e.status === 401) return json({ error: "Invalid ANTHROPIC_API_KEY." }, 500);
+      if (e.status === 429) return json({ error: "Rate limit exceeded. Please try again in a moment." }, 429);
+      return json({ error: `AI service error (${e.status}).` }, 502);
+    }
+    return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
   }
 });
