@@ -1,0 +1,16 @@
+# Netlify config for the Luciana Shoes back-office (trade.lucianashoes.com).
+# The public lucianashoes.com site is a separate Netlify site from a separate repo.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# SPA fallback. public/_redirects covers this too; keeping it here means the rule
+# survives even if the public/ file is ever dropped from the build.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
