@@ -189,7 +189,7 @@ The `--no-verify-jwt` flag is what turns Verify JWT off; don't omit it.
 
 The new database starts empty, with no users.
 
-1. Open `https://trade.lucianashoes.com/admin-login`.
+1. Open `https://trade.lucianashoes.com/admin/login`.
 2. Sign up with the email you want as the owner account.
 3. The `on_auth_user_created_bootstrap_admin` trigger grants `admin` to the
    **first** account to sign up. Everyone after that gets no role and sees
