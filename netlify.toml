@@ -1,4 +1,5 @@
-# Netlify config for the Luciana Shoes back-office (trade.lucianashoes.com).
+# Netlify config for the Luciana Shoes back-office.
+# Served at lucianashoes.com/trade via a proxy rewrite on the public site.
 # The public lucianashoes.com site is a separate Netlify site from a separate repo.
 
 [build]
@@ -7,9 +8,21 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # Asset prefix. Must match the path the public site proxies from.
+  APP_BASE_PATH = "/trade/"
 
-# SPA fallback. public/_redirects covers this too; keeping it here means the rule
-# survives even if the public/ file is ever dropped from the build.
+# SPA fallback. public/_redirects covers this too; keeping it here means the
+# rules survive even if the public/ file is ever dropped from the build.
+[[redirects]]
+  from = "/trade/assets/*"
+  to = "/assets/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/trade/*"
+  to = "/index.html"
+  status = 200
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

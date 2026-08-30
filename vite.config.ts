@@ -4,7 +4,12 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
+// Served from lucianashoes.com/trade, so assets need the /trade/ prefix.
+// Overridable so the standalone Netlify preview can still build at "/".
+const base = process.env.APP_BASE_PATH || "/trade/";
+
 export default defineConfig(({ mode }) => ({
+  base,
   server: {
     host: "::",
     port: 8080,
