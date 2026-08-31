@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Gem, ShoppingCart, DollarSign, Clock, LogOut } from "lucide-react";
-import type { User } from "@supabase/supabase-js";
+import type { AuthUser as User } from "@/integrations/supabase/client";
 
 export default function WholesaleDashboard() {
   const navigate = useNavigate();

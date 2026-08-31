@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analytics-chat`;
+const CHAT_URL = supabase.functionUrl("analytics-chat");
 
 const suggestedQuestions = [
   { icon: BarChart3, text: "What are the top selling styles by quantity?" },
@@ -45,9 +45,8 @@ export default function Analytics() {
     let assistantSoFar = "";
 
     try {
-      // The edge function resolves the caller with auth.getUser(token) and checks
-      // their admin role, so it needs the signed-in user's access token. The
-      // publishable key is not a user JWT and always resolves to 401.
+      // The function resolves the caller from the session token and checks
+      // their admin role, so it needs the signed-in user's access token.
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Your session has expired. Please sign in again.");
 
@@ -55,7 +54,6 @@ export default function Analytics() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ messages: allMessages }),

@@ -13,6 +13,12 @@
 
 # SPA fallback. public/_redirects covers this too; keeping it here means the
 # rules survive even if the public/ file is ever dropped from the build.
+# Functions are mounted at /api/* (see the `config.path` export in each one).
+[[redirects]]
+  from = "/trade/api/*"
+  to = "/api/:splat"
+  status = 200
+
 [[redirects]]
   from = "/trade/assets/*"
   to = "/assets/:splat"

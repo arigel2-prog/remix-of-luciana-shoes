@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local environment. Never commit real credentials — a committed .env silently
+# overrides nothing on Netlify but does leak whatever is in it.
+.env
+.env.local
