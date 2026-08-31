@@ -33,7 +33,8 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      {/* BASE_URL is derived from `base` in vite.config.ts */}
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Routes>
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/accept-invite" element={<AcceptInvite />} />

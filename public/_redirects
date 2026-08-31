@@ -1,1 +1,6 @@
-/*    /index.html   200
+# Built with base "/trade/" so it can be proxied at lucianashoes.com/trade.
+# These rules let the standalone Netlify URL serve the same build.
+/trade/api/*     /api/:splat     200
+/trade/assets/*  /assets/:splat  200
+/trade/*         /index.html     200
+/*               /index.html     200

@@ -1,302 +1,214 @@
-# Deploying the back-office to trade.lucianashoes.com
+# Deploying the back-office to lucianashoes.com/trade
 
-This repo is the Luciana Shoes back-office / CRM. It deploys as **its own Netlify
-site** on **its own Supabase project**, at **trade.lucianashoes.com**.
+This repo is the Luciana Shoes back-office / CRM. It deploys as **its own
+Netlify site**, on **Turso**, served at **lucianashoes.com/trade** via a proxy
+rule on the public site.
 
-It is completely independent of the public lucianashoes.com site: separate repo,
-separate Netlify site, separate database. Nothing in this runbook touches the
-public site.
-
-> **On provenance.** The original `DEPLOY.md`, `luciana-migration.sql` and
-> `analytics-chat-index.ts` prepared for this migration did not survive the
-> hand-off — the attached archive turned out to be a built `dist/` bundle. This
-> runbook and `supabase/luciana-migration.sql` were rebuilt from what the repo
-> itself proves: the nine original Lovable migrations recovered from git history
-> (commit `f8a00f0^`), and the app's own code. Where the original notes and this
-> file disagree, check before trusting either.
+> **This supersedes the earlier Supabase runbook.** Two decisions changed the
+> shape of the deploy: the database is Turso (not Supabase), and the app is
+> served at a path on the public domain (not at `trade.lucianashoes.com`).
+> Nothing that referred to a Supabase project, an anon key, or a `VITE_`
+> database variable applies any more. There is no Supabase project to create.
 
 ---
 
-## What is already done in this branch
+## What changed, and why it matters
 
-Steps 2 and 3 of the original plan are committed here — no action needed:
+Supabase supplied four things this app depended on. Turso is a hosted SQLite
+database and supplies exactly one of them (the database). The other three had
+to be built, and now live in `netlify/functions/`:
 
-| Change | File |
+| Was | Is now |
 |---|---|
-| Analytics sends the user's access token, not the anon key | `src/pages/Analytics.tsx` |
-| SPA redirect so deep links don't 404 | `public/_redirects`, `netlify.toml` |
-| Edge function calls Anthropic instead of the Lovable gateway | `supabase/functions/analytics-chat/index.ts` |
-| Consolidated schema for a fresh project | `supabase/luciana-migration.sql` |
-| Lockfile resynced so `npm ci` doesn't fail the build | `package-lock.json` |
+| Supabase Auth (signup, sessions, JWTs) | `netlify/functions/auth.js` — scrypt passwords, opaque session tokens in a `sessions` table |
+| Row-level security policies | `netlify/functions/lib/acl.js` — per-table role rules, enforced in JavaScript |
+| `style-images` storage bucket | `netlify/functions/storage.js` — Netlify Blobs |
+| `analytics-chat` edge function | `netlify/functions/analytics-chat.js` — same Anthropic call, Netlify-hosted |
 
-Everything below needs your login, so it's yours to run. Work top to bottom —
-step 5 needs values produced in step 1.
+**The most important consequence:** the browser never talks to Turso. It cannot.
+A Turso auth token is all-or-nothing — there is no equivalent of an anon key
+made safe by RLS — so a token in the frontend bundle would hand every visitor
+full read/write on the whole database. Everything goes through the functions,
+which hold the token server-side and decide what the caller may see.
 
----
-
-## Step 1 — Create the Supabase project and load the schema
-
-1. Go to <https://supabase.com/dashboard> and **New project**.
-   - Name: `luciana-trade` (anything you like)
-   - Region: pick the one closest to you
-   - **Save the database password** somewhere safe — it is shown once.
-2. Wait for provisioning (~2 minutes).
-3. Open **SQL Editor → New query**.
-4. Paste the entire contents of [`supabase/luciana-migration.sql`](supabase/luciana-migration.sql)
-   and **Run**. It is ~600 lines; run it in one go, top to bottom.
-   - Expect a batch of green `NOTICE: ... does not exist, skipping` lines. Those
-     are the idempotency guards doing their job, not errors.
-   - Re-running the whole file later is safe.
-5. Verify — paste and run:
-
-   ```sql
-   SELECT count(*) AS tables FROM pg_tables WHERE schemaname = 'public';
-   -- expect 11
-
-   SELECT id, public FROM storage.buckets WHERE id = 'style-images';
-   -- expect one row, public = true
-
-   SELECT tgname FROM pg_trigger WHERE tgname = 'on_auth_user_created_bootstrap_admin';
-   -- expect one row
-   ```
-
-6. Go to **Project Settings → API** and copy these two values — step 5 needs them:
-   - **Project URL** → `https://<ref>.supabase.co`
-   - **Publishable / anon key** → starts `sb_publishable_...`
-
-> The last two checks in step 5 above are the two bugs that were flagged in the
-> original hand-off: a signup trigger missing `FOR EACH ROW` (which blocks all
-> signup, so nobody can ever log in), and a missing `style-images` bucket (which
-> breaks every image upload). Both are correct in this file — verified by
-> actually running it against a PostgreSQL 16 database, creating users, and
-> confirming the first signup is promoted to admin and the second is not.
+`src/integrations/supabase/client.ts` keeps its name and its API surface on
+purpose: it now speaks to those functions instead of Supabase, so the 91 query
+call sites across 21 pages did not have to be rewritten.
 
 ---
 
-## Step 2 — Auth fix in `src/pages/Analytics.tsx`
-
-**Already applied in this branch.** For the record, as shipped the page sent:
-
-```ts
-Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
-```
-
-The edge function resolves the caller with `auth.getUser(token)` and then checks
-their `admin` role. The publishable key is not a user JWT, so it resolves to no
-user and the AI Analytics tab returns **401 Unauthorized** every time. It now
-sends the signed-in user's `session.access_token` instead.
-
----
-
-## Step 3 — SPA redirect
-
-**Already applied in this branch** as `public/_redirects`:
-
-```
-/*    /index.html   200
-```
-
-Vite copies `public/` into `dist/`, so it lands at `dist/_redirects` where
-Netlify reads it (confirmed in a local build). Without it, a hard refresh on
-`/orders` or any deep link returns 404. The same rule is duplicated in
-`netlify.toml` as a backstop.
-
----
-
-## Step 4 — Deploy the `analytics-chat` edge function
-
-Two ways. The dashboard route needs no tooling.
-
-### Option A — Supabase dashboard
-
-1. **Edge Functions → Deploy a new function**, name it exactly `analytics-chat`.
-2. Paste the contents of `supabase/functions/analytics-chat/index.ts`.
-3. **Turn "Verify JWT" OFF.** This is required. The function does its own auth —
-   it reads the Authorization header, resolves the user, and rejects anyone
-   without the `admin` role. Supabase's built-in JWT verification would reject
-   the request before that code runs.
-4. **Edge Functions → Secrets** (or Project Settings → Edge Functions → Secrets),
-   add:
-
-   | Name | Value |
-   |---|---|
-   | `ANTHROPIC_API_KEY` | your key from <https://console.anthropic.com/settings/keys> |
-
-   `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically —
-   do not add them by hand.
-
-### Option B — Supabase CLI
+## Step 1 — Create the Turso database and load the schema
 
 ```sh
-npx supabase login
-npx supabase link --project-ref <your-new-project-ref>
-npx supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
-npx supabase functions deploy analytics-chat --no-verify-jwt
+# https://docs.turso.tech/quickstart
+turso db create luciana-trade
+turso db shell luciana-trade < db/schema.sql
+
+# Values for step 3.
+turso db show luciana-trade --url
+turso db tokens create luciana-trade
 ```
 
-The `--no-verify-jwt` flag is what turns Verify JWT off; don't omit it.
+Verify:
 
-> **Your Anthropic key never goes in the frontend.** It lives only as an edge
-> function secret. Anything in `VITE_*` is compiled into the public JS bundle.
+```sh
+turso db shell luciana-trade "SELECT count(*) FROM sqlite_master WHERE type='table'"
+-- expect 13 (11 app tables + users + sessions)
+```
+
+`db/schema.sql` is safe to re-run — every statement is `IF NOT EXISTS`.
 
 ---
 
-## Step 5 — Create the Netlify site
+## Step 2 — Create the Netlify site
 
 1. <https://app.netlify.com> → **Add new site → Import an existing project → GitHub**.
 2. Pick **`arigel2-prog/remix-of-luciana-shoes`**. Make sure it is this repo and
    not the public site's repo.
-3. Build settings — `netlify.toml` in this repo already sets them, so just confirm:
-   - Build command: `npm run build`
-   - Publish directory: `dist`
-4. **Before the first deploy**, open **Site configuration → Environment variables**
-   and add the two values from step 1.6:
+3. `netlify.toml` already sets the build command (`npm run build`), publish
+   directory (`dist`) and `APP_BASE_PATH`, so just confirm them.
 
-   | Key | Value |
-   |---|---|
-   | `VITE_SUPABASE_URL` | `https://<your-new-ref>.supabase.co` |
-   | `VITE_SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_...` |
-
-   This matters: a stale `.env` is committed in this repo pointing at the old
-   Lovable Supabase project. Netlify's environment variables take precedence over
-   it at build time (verified in a local build — with the vars set, the old
-   project URL does not appear in the bundle at all). But if you forget to set
-   them, the build silently succeeds and points the live site at the old
-   database. Set them first.
-5. Deploy, and confirm the `.netlify.app` preview URL loads.
+There is an existing Netlify site called **`luciana-backoffice-preview`** on the
+team. It has never run a build — it was created but never connected. Either
+connect that one to this repo or make a new site; there is nothing in it to
+preserve.
 
 ---
 
-## Step 6 — Point trade.lucianashoes.com at the site
+## Step 3 — Environment variables
 
-1. In Netlify: **Domain management → Add a domain → `trade.lucianashoes.com`**.
-2. Netlify shows you a target hostname like `your-site-name.netlify.app`.
-3. At whatever DNS host holds `lucianashoes.com`, add:
+**Site configuration → Environment variables.** All of these are server-side.
+None of them may be prefixed `VITE_` — that would compile the value into the
+public JavaScript bundle.
 
-   | Type | Name | Value |
-   |---|---|---|
-   | CNAME | `trade` | `your-site-name.netlify.app` |
+| Key | Value |
+|---|---|
+| `TURSO_DATABASE_URL` | `libsql://luciana-trade-<org>.turso.io`, from step 1 |
+| `TURSO_AUTH_TOKEN` | the token from step 1 |
+| `ANTHROPIC_API_KEY` | from <https://console.anthropic.com/settings/keys> |
 
-   A `CNAME` on the `trade` subdomain only. **Do not touch the root `@` record or
-   `www`** — those point at the public site and changing them takes it down.
-4. Wait for propagation (usually minutes, up to an hour), then let Netlify
-   provision the Let's Encrypt certificate. Confirm `https://trade.lucianashoes.com`
-   loads with a valid padlock.
+`APP_BASE_PATH` is already set to `/trade/` in `netlify.toml`; override it to
+`/` only if you want a build that serves from a domain root.
+
+Deploy, and confirm the `.netlify.app` URL loads. The redirect rules in
+`netlify.toml` mean the standalone URL serves the `/trade/`-prefixed build
+correctly, so you can test everything before touching DNS.
 
 ---
 
-## Step 7 — Create your admin login
+## Step 4 — Proxy /trade from the public site
 
-The new database starts empty, with no users.
+**This is the one step that is not in this repo.** The public lucianashoes.com
+site is a separate Netlify site from a separate repo, and the rule has to live
+there — in its `netlify.toml` or its `public/_redirects`:
 
-1. Open `https://trade.lucianashoes.com/admin-login`.
+```
+/trade/*  https://<back-office-site>.netlify.app/:splat  200
+```
+
+Status `200` (a rewrite), not `301` — a redirect would send the browser to the
+`.netlify.app` hostname and the URL would stop reading `lucianashoes.com/trade`.
+
+Order matters: this rule must come **before** any catch-all SPA fallback in that
+file, or the public site will swallow `/trade` and serve its own index.html.
+
+No DNS change is needed, and the root and `www` records are untouched — that is
+the main advantage of the path over the old subdomain plan.
+
+---
+
+## Step 5 — Create your admin login
+
+The database starts empty, with no users.
+
+1. Open `https://lucianashoes.com/trade/admin/login`.
 2. Sign up with the email you want as the owner account.
-3. The `on_auth_user_created_bootstrap_admin` trigger grants `admin` to the
-   **first** account to sign up. Everyone after that gets no role and sees
-   nothing until invited — so sign up yourself first, before anyone else.
+3. The first account to sign up is granted `admin` automatically (`createUser`
+   in `netlify/functions/lib/auth.js`). Everyone after that gets no role and
+   sees nothing until invited — so sign up yourself first, before anyone else.
 4. Invite the rest of the team from the **Team** page.
 
-If you would rather not rely on ordering, grant it explicitly in the SQL Editor:
+To grant it explicitly instead:
 
-```sql
-INSERT INTO public.user_roles (user_id, role)
-SELECT id, 'admin' FROM auth.users WHERE email = 'you@example.com'
-ON CONFLICT (user_id, role) DO NOTHING;
+```sh
+turso db shell luciana-trade \
+  "INSERT OR IGNORE INTO user_roles (user_id, role)
+   SELECT id, 'admin' FROM users WHERE email = 'you@example.com'"
 ```
 
 ---
 
 ## Verification checklist
 
-- [ ] `https://trade.lucianashoes.com` loads over HTTPS
-- [ ] A hard refresh on a deep link (e.g. `/orders`) loads instead of 404 — proves `_redirects`
+- [ ] `https://lucianashoes.com/trade` loads over HTTPS
+- [ ] A hard refresh on `/trade/orders` loads instead of 404 — proves the redirects
 - [ ] You can sign in, and the sidebar shows the admin pages
-- [ ] Catalog → add a style with a photo — proves the `style-images` bucket
-- [ ] Create a client, then an order — proves the RLS policies accept an admin
-- [ ] AI Analytics → ask "what are the top selling styles?" and watch it stream —
-      proves the auth fix, the edge function, and `ANTHROPIC_API_KEY` together
+- [ ] Catalog → add a style with a photo — proves Netlify Blobs
+- [ ] Create a client, then an order — proves the write path and the ACL
+- [ ] Open an order — the client and line items appear, proving embedded reads
+- [ ] AI Analytics → ask "what are the top selling styles?" and watch it stream
 - [ ] Public lucianashoes.com still loads and is unchanged
 
 ---
 
-## Migrating existing data (optional)
-
-This sets up an empty database. To bring across data from the old Lovable
-project (`kbfehjpbrnacpolkymjr`), dump and restore in FK-dependency order —
-`clients` and `styles` first, then `orders`, then `order_items` and `payments`:
+## Testing
 
 ```sh
-pg_dump --data-only --no-owner \
-  -t public.clients -t public.styles -t public.orders \
-  -t public.order_items -t public.payments -t public.expenses \
-  "postgresql://postgres:<OLD_PASSWORD>@db.kbfehjpbrnacpolkymjr.supabase.co:5432/postgres" \
-  > luciana-data.sql
-
-psql "postgresql://postgres:<NEW_PASSWORD>@db.<NEW_REF>.supabase.co:5432/postgres" \
-  -f luciana-data.sql
+npm run test          # frontend (jsdom)
+npm run test:server   # server tier against a real local libSQL file
+npm run test:all      # both
 ```
 
-Storage objects in `style-images` are not covered by `pg_dump` — re-upload those,
-or copy the bucket with the Supabase CLI. User accounts do not transfer either;
-everyone signs up again on the new project.
-
----
-
-## Troubleshooting
-
-**AI Analytics returns 401** — the browser is not sending a session token. Confirm
-you are signed in; confirm the deployed function has Verify JWT **off**.
-
-**AI Analytics returns 403** — you are signed in but have no `admin` row in
-`user_roles`. See step 7.
-
-**AI Analytics says AI is not configured** — the `ANTHROPIC_API_KEY` secret is
-missing on the edge function. Note that setting a secret does not redeploy the
-function; redeploy after adding it.
-
-**Every page is empty but there are no errors** — the frontend is pointed at the
-wrong project, or RLS is refusing every row. Check the Network tab for the
-Supabase host it is calling; if it is `kbfehjpbrnacpolkymjr`, the Netlify
-environment variables from step 5.4 are missing and the stale committed `.env`
-was used.
-
-**Image upload fails** — the `style-images` bucket is missing. Re-run step 1's
-verification query; the migration creates it.
-
-**Netlify build succeeds but the site is blank** — check the deploy log for the
-Vite build, and the browser console. A missing `VITE_SUPABASE_URL` throws at
-client construction.
+The server tests are the ones that matter most. `acl.js` is now the only thing
+standing between a signed-in wholesale user and the whole order book — under
+Supabase that was the database's job. The suite asserts that a wholesale user
+is refused the order book, sees only active styles, cannot escape that scope
+with an explicit filter, and cannot reach a forbidden table by embedding it.
+**If you change `acl.js`, run these.**
 
 ---
 
 ## Notes worth knowing
 
-- **The edge function sends the whole database to the model on every message.**
-  It reads all orders, clients, styles, order items, payments and expenses and
-  embeds them in the system prompt. That is fine at current volume and it is how
-  the function was originally written, but it grows linearly with the business
-  and will eventually hit the context limit and get expensive. The system prompt
-  is marked cacheable and the queries are ordered by `id` so the snapshot stays
-  byte-stable between turns of a conversation, which is what makes the cache
-  actually hit. When it does outgrow this, the fix is to give the model SQL query
-  tools instead of a dump.
-- **Model:** `claude-opus-5`, streaming, with adaptive thinking on. The function
-  translates Anthropic's stream into OpenAI-shaped SSE chunks, which is why the
-  reader in `Analytics.tsx` needed only the auth change.
-- **Refusal fallbacks** (the `fallbacks` beta parameter) are deliberately not
-  enabled. They add a beta flag for a failure mode that does not realistically
-  apply to questions about your own order book. Worth adding if this function
-  ever handles broader input.
-- **The committed `package-lock.json` was out of sync with `package.json`** —
-  it predated `@supabase/supabase-js`, `react-markdown`, `html2pdf.js`, `vitest`
-  and Playwright being added. Netlify runs `npm ci` when it finds that lockfile,
-  and `npm ci` fails outright on a lockfile that doesn't match (`EUSAGE`), so the
-  first deploy would have failed before compiling anything. It's regenerated in
-  this branch and `npm ci` now passes. Note the repo carries three lockfiles —
-  `package-lock.json`, `bun.lock` and `bun.lockb` — because Lovable builds with
-  Bun; both are now in sync, so it doesn't matter which one Netlify picks.
+- **The analytics function sends the whole database to the model on every
+  message.** It reads all orders, clients, styles, order items, payments and
+  expenses into the system prompt. Fine at current volume; it grows linearly
+  with the business and will eventually get expensive. The system prompt is
+  marked cacheable and the queries are ordered by `id` so the snapshot stays
+  byte-stable between turns, which is what makes the cache hit. When it
+  outgrows this, give the model SQL query tools instead of a dump.
+- **Model:** `claude-opus-5`, streaming, adaptive thinking. The function
+  translates Anthropic's stream into OpenAI-shaped SSE chunks, which is what
+  the reader in `Analytics.tsx` parses.
+- **Declared column types in `db/schema.sql` are load-bearing.** `BOOLEAN` and
+  `TEXT_ARRAY` are not SQLite types; the server reads them back via
+  `PRAGMA table_xinfo` to know which columns to convert to real booleans and
+  parsed arrays. Renaming those declarations silently changes what the API
+  returns. (`table_xinfo`, not `table_info` — the latter omits generated
+  columns, which would drop `order_items.total_price` from every read.)
+- **Adding a table to `db/schema.sql` is not enough to make it reachable.** It
+  also needs an entry in `TABLES` in `acl.js`, and an entry in `RELATIONSHIPS`
+  if anything embeds it. Unlisted tables are denied — that default is
+  deliberate.
 - **This repo still syncs with Lovable.** Editing there will commit over these
-  files. If you have finished with Lovable, disconnect it so the auth fix and the
-  Anthropic rewrite are not overwritten.
-- **`supabase/config.toml`** still holds the old project ref. It only affects
-  local CLI use, not the deployed site; update it if you use the CLI.
+  files. If you have finished with Lovable, disconnect it.
+- **Leftovers from the Supabase era.** `supabase/luciana-migration.sql` and
+  `supabase/functions/analytics-chat/index.ts` are kept as the reference the
+  port was made from — nothing reads them at build or run time.
+  `src/integrations/supabase/types.ts` is likewise dead. They can be deleted
+  once the Turso deploy has been running happily for a while.
+
+---
+
+## Migrating existing data (optional)
+
+If there is data worth keeping in the old Lovable Supabase project
+(`kbfehjpbrnacpolkymjr`), it has to be moved column-by-column rather than with
+`pg_dump` — the target is SQLite, and the types differ (`timestamptz` to ISO
+text, `TEXT[]` to JSON, booleans to 0/1). Export each table to CSV from the
+Supabase dashboard and load it with `turso db shell ... ".import"`, in
+FK-dependency order: `clients` and `styles` first, then `orders`, then
+`order_items`, `payments`, `expenses`.
+
+User accounts do not transfer — passwords were hashed by Supabase Auth with a
+different scheme. Everyone signs up again, and the first signup gets admin.
